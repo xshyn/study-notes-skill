@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: fa-exam-python-classes
+expected_outcome: |
+  Persian (right-to-left) .docx and .pptx exam notes on Python classes: scopes and namespaces, class objects, instance objects, methods, class vs instance variables, inheritance, multiple inheritance/MRO, private variables, iterators, generators; English terms kept alongside Persian; practice questions with answers.
+context:
+  scaffold_script: place-files.sh

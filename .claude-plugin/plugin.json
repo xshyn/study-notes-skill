@@ -1,0 +1,10 @@
+{
+  "name": "study-notes",
+  "description": "Detailed study notes (.docx) and a review deck (.pptx) from any learning resource — URL, PDF, slides, DOCX, EPUB, YouTube — for learning, review and exam prep.",
+  "version": "1.0.0",
+  "author": { "name": "Shayan", "url": "https://github.com/xshyn" },
+  "homepage": "https://github.com/xshyn/study-notes-skill",
+  "repository": "https://github.com/xshyn/study-notes-skill",
+  "license": "MIT",
+  "keywords": ["study", "notes", "education", "exam", "docx", "pptx"]
+}

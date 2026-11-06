@@ -1,0 +1,21 @@
+{
+  "name": "study-notes-skill",
+  "owner": { "name": "Shayan", "url": "https://github.com/xshyn" },
+  "metadata": {
+    "description": "Agent skill that turns any learning resource into detailed study notes (.docx) and a review deck (.pptx).",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "study-notes",
+      "source": "./",
+      "description": "Detailed study notes + slide deck from a URL, PDF, slides, DOCX, EPUB or video — for learning, review and exam prep.",
+      "version": "1.0.0",
+      "author": { "name": "Shayan", "url": "https://github.com/xshyn" },
+      "homepage": "https://github.com/xshyn/study-notes-skill",
+      "license": "MIT",
+      "keywords": ["study", "notes", "education", "exam", "docx", "pptx", "learning"],
+      "category": "productivity"
+    }
+  ]
+}
