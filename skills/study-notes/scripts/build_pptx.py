@@ -317,13 +317,15 @@ class Deck:
                          10, color="AEB4D6")
 
     def definition_slide(self, title, defs, kicker):
-        per = 4 if all(len(plain(d.get("definition", ""))) < 260 for d in defs) else 2
+        longest = max((len(plain(d.get("definition", d.get("text", "")))) + len(plain(d.get("example", ""))))
+                      for d in defs) if defs else 0
+        per = 6 if longest < 170 else 4 if longest < 280 else 2
         for pg in range(0, len(defs), per):
             chunk = defs[pg:pg + per]
             s = self.new_slide("\n".join(f"{plain(d.get('term', ''))}: {plain(d.get('definition', ''))} "
                                          f"{plain(d.get('note', ''))}" for d in chunk))
             self.chrome(s, title, kicker, continued=pg > 0)
-            cols = 2 if len(chunk) > 1 else 1
+            cols = 3 if per == 6 and len(chunk) > 4 else (2 if len(chunk) > 1 else 1)
             rows = math.ceil(len(chunk) / cols)
             gw = (W - 2 * MARGIN - 0.3 * (cols - 1)) / cols
             gh = (BODY_BOTTOM - BODY_TOP - 0.25 * (rows - 1)) / rows
@@ -568,7 +570,7 @@ class Deck:
             self.textbox(s, MARGIN, BODY_BOTTOM - cap_h + 0.05, bw, cap_h, [caption], 12, color=self.T["muted"],
                          italic=True, align=PP_ALIGN.CENTER)
 
-    def quiz_slides(self, qs, title, kicker=None):
+    def quiz_slides(self, qs, title, kicker=None, answer_slide=True):
         if not qs:
             return
         start = self.qn
@@ -580,7 +582,14 @@ class Deck:
                 qparas.append((f"{chr(65 + oi)}. {opt}", 1, {"size": 0}))
         # fix nested option sizes later in fit (size=0 sentinel -> use size-2)
         qparas = [(t, l, {k: v for k, v in o.items() if not (k == "size" and v == 0)}) for t, l, o in qparas]
-        self.bullet_slide_raw(title, qparas, kicker, notes="Pause here and answer before moving on.")
+        answers_txt = " ".join(f"Q{i}. {plain(q.get('answer', ''))} {plain(q.get('explanation', ''))}"
+                               for i, q in enumerate(qs, start + 1))
+        if not answer_slide:
+            self.bullet_slide_raw(title, qparas, kicker,
+                                  notes=f"{self.L['answers']}: {answers_txt}")
+            return
+        self.bullet_slide_raw(title, qparas, kicker, notes="Pause here and answer before moving on. "
+                              f"{self.L['answers']}: {answers_txt}")
         aparas = []
         for i, q in enumerate(qs, start + 1):
             aparas.append((f"**Q{i}.** {q.get('answer', '')}", 0, {}))
@@ -619,35 +628,99 @@ class Deck:
                              + body, size)
 
     # ------------------------------------------------------------------ section rendering
-    def section_slides(self, num, depth, sec):
+    CALLOUT_TYPES = ("key_point", "warning", "tip", "mnemonic", "note", "intuition", "pitfall", "mistake",
+                     "exam_tip", "important", "callout")
+    NOTES_ONLY = ("note", "intuition")  # elaborations: speaker notes in the deck, boxes in the doc
+
+    @staticmethod
+    def _norm(t):
+        t = (t or "text").lower()
+        return {"paragraph": "text", "list": "bullets", "steps": "numbered", "numbered_list": "numbered",
+                "figure": "image", "math": "formula", "equation": "formula", "diagram_mermaid": "diagram",
+                "pitfall": "warning", "mistake": "warning", "exam_tip": "tip", "important": "key_point",
+                "callout": "key_point"}.get(t, t)
+
+    def top_section(self, num, sec, quiz_pool):
+        """Render one top-level section and all its subsections as a compact review sequence:
+        divider → key-term cards → content (per subsection) → 'remember' slide → check-yourself quiz."""
+        self.root_title = sec.get("title", "")
+        self.divider(num, sec)
+        subtree = [(num, 1, sec)] + [(f"{num}.{n}", d + 1, s)
+                                     for n, d, s in walk_sections(sec.get("subsections", []))]
+        defs = [b for _, _, s in subtree for b in s.get("blocks", [])
+                if self._norm(b.get("type")) == "definition" and b.get("slide", True) is not False]
+        if defs:
+            self.definition_slide(self.L.get("key_terms", "Key terms"),
+                                  defs, f"§{num}")
+        remember = []
+        self._flow = {"text": [], "notes": [], "code": [], "title": None, "kicker": None}
+        for snum, depth, s in subtree:
+            self.content_flow(snum, depth, s, remember)
+            for t in s.get("takeaways", []) or []:
+                remember.append(("key_point", item_text(t)))
+        self._flush_flow()
+        if remember:
+            paras = []
+            for kind, text in remember:
+                bg, bar, _ = CALLOUTS.get(kind, CALLOUTS["note"])
+                paras.append((f"**{self.L.get(kind, kind)}:** {text}", 0, {"bullet": "■", "bullet_color": bar}))
+            self.bullet_slide_raw(f"{self.L.get('remember', 'Remember')}: {plain(sec.get('title', ''))}", paras,
+                                  f"§{num}", notes=" ".join(plain(t) for _, t in remember))
+        if quiz_pool:
+            self.quiz_slides(quiz_pool, f"{self.L['check']}: {plain(sec.get('title', ''))}", f"§{num}",
+                             answer_slide=bool(self.meta.get("deck_section_answer_slides", False)))
+
+    def content_flow(self, num, depth, sec, remember):
+        """Text from consecutive (sub)sections flows onto shared slides (with sub-headings) until a
+        visual block needs its own slide — this keeps review decks compact."""
         title = sec.get("title", "")
         kicker = f"§{num} · {plain(self.root_title)}" if depth > 1 else f"§{num}"
-        blocks = list(sec.get("blocks", []))
-        if depth > 1 and sec.get("summary"):
-            blocks.insert(0, {"type": "text", "text": sec["summary"], "_summary": True})
-        pending_text: list = []
-        pending_notes: list[str] = []
+        blocks = [b for b in sec.get("blocks", []) if b.get("slide", True) is not False]
+        F = self._flow
+        pending_text, pending_notes, pending_code = F["text"], F["notes"], F["code"]
+        if F["title"] is None or not pending_text:
+            F["title"], F["kicker"] = title, kicker
+        if depth > 1:
+            pending_text.append((f"{num}  {title}", 0, {"bold": True, "color": self.T["primary"],
+                                                         "space_after": 4}))
+            if sec.get("summary"):
+                pending_text.append((sec["summary"], 0, {"italic": True, "color": self.T["muted"]}))
 
-        def flush():
+        def flush_text():
             if pending_text:
-                self.bullet_slide_raw(title, list(pending_text), kicker, notes=" ".join(pending_notes))
+                ft = F["title"] or title
+                paras = list(pending_text)
+                if paras and paras[0][2].get("bold") and paras[0][0].endswith(plain(ft)):
+                    paras = paras[1:]  # sub-heading duplicates the slide title
+                if paras:
+                    self.bullet_slide_raw(ft, paras, F["kicker"] or kicker, notes=" ".join(pending_notes))
                 pending_text.clear()
                 pending_notes.clear()
+            F["title"], F["kicker"] = title, kicker
 
-        i = 0
-        while i < len(blocks):
-            b = blocks[i]
-            t = (b.get("type") or "text").lower()
-            t = {"paragraph": "text", "list": "bullets", "steps": "numbered", "numbered_list": "numbered",
-                 "figure": "image", "math": "formula", "equation": "formula", "diagram_mermaid": "diagram"}.get(t, t)
+        def flush_code():
+            while pending_code:
+                a = pending_code.pop(0)
+                if pending_code and self._small_code(a) and self._small_code(pending_code[0]):
+                    self.code_pair_slide(a, pending_code.pop(0), title, kicker)
+                else:
+                    self.code_slide(a, kicker)
+
+        def flush():
+            flush_text()
+            flush_code()
+
+        self._flush_flow = flush
+        for i, b in enumerate(blocks):
+            t = self._norm(b.get("type"))
             if t == "text":
-                short = b.get("short") or b.get("slide")
+                short = b.get("short") or b.get("slide_text")
                 txt = b.get("text", "")
                 if short:
                     for x in (short if isinstance(short, list) else [short]):
                         pending_text.append((x, 0, {"bullet": "•"}))
                 else:
-                    for sent in sentences(txt):
+                    for sent in sentences(txt)[:4]:
                         pending_text.append((sent, 0, {"bullet": "•"}))
                 pending_notes.append(plain(txt))
             elif t in ("bullets", "numbered"):
@@ -658,33 +731,23 @@ class Deck:
                     for ch in item_children(it):
                         pending_text.append((item_text(ch), 1, {"bullet": "–"}))
             elif t == "definition":
-                flush()
-                group = []
-                while i < len(blocks) and (blocks[i].get("type") or "") == "definition":
-                    group.append(blocks[i])
-                    i += 1
-                self.definition_slide(title, group, kicker)
-                continue
-            elif t in ("key_point", "warning", "tip", "mnemonic", "note", "intuition", "pitfall", "mistake",
-                       "exam_tip", "important", "callout"):
-                flush()
-                group = []
-                while i < len(blocks) and (blocks[i].get("type") or "") in (
-                        "key_point", "warning", "tip", "mnemonic", "note", "intuition", "pitfall", "mistake",
-                        "exam_tip", "important", "callout"):
-                    group.append(blocks[i])
-                    i += 1
-                self.callout_slide(title, group, kicker)
-                continue
+                continue  # shown on the section's key-term cards
+            elif t in self.NOTES_ONLY:
+                pending_notes.append(plain(" ".join(filter(None, [b.get("title"), b.get("text")] +
+                                                          [item_text(x) for x in b.get("items", [])]))))
+            elif t in ("key_point", "warning", "tip", "mnemonic"):
+                if b.get("text"):
+                    remember.append((t, b["text"]))
+                for it in b.get("items", []):
+                    remember.append((t, item_text(it)))
+            elif t == "code":
+                pending_code.append(b)
             elif t == "example":
                 flush()
                 self.example_slide(b, kicker)
             elif t == "formula":
                 flush()
                 self.formula_slide(b, kicker)
-            elif t == "code":
-                flush()
-                self.code_slide(b, kicker)
             elif t == "table":
                 flush()
                 self.table_slide(b, kicker, b.get("title") or b.get("caption") or title)
@@ -705,14 +768,46 @@ class Deck:
             elif t == "quote":
                 pending_text.append((f"“{b.get('text', '')}”" + (f" — {b['by']}" if b.get("by") else ""), 0,
                                      {"italic": True, "color": self.T["muted"]}))
-            else:
-                if b.get("text"):
-                    pending_text.append((b["text"], 0, {"bullet": "•"}))
-            i += 1
-        flush()
-        if sec.get("takeaways"):
-            self.callout_slide(title, [{"type": "key_point", "title": self.L["takeaways"],
-                                        "items": sec["takeaways"]}], kicker)
+            elif b.get("text"):
+                pending_text.append((b["text"], 0, {"bullet": "•"}))
+        if pending_code:
+            flush()
+
+    @staticmethod
+    def _small_code(b):
+        lines = b.get("code", "").rstrip("\n").split("\n")
+        return len(lines) <= 14 and max((len(x) for x in lines), default=0) <= 58
+
+    def code_pair_slide(self, a, b, title, kicker):
+        s = self.new_slide(" ".join(filter(None, [plain(a.get("explanation", "")), plain(b.get("explanation", ""))])))
+        self.chrome(s, title, kicker)
+        colw = (W - 2 * MARGIN - 0.3) / 2
+        for ci, blk in enumerate((a, b)):
+            x = MARGIN + ci * (colw + 0.3)
+            if self.rtl:
+                x = W - MARGIN - colw - ci * (colw + 0.3)
+            y = BODY_TOP
+            cap = blk.get("title") or blk.get("caption")
+            if cap:
+                self.textbox(s, x, y, colw, 0.4, [cap], 13, color=self.T["primary"], bold=True)
+                y += 0.45
+            lines = blk.get("code", "").rstrip("\n").split("\n")
+            size = 14
+            while size > 10 and (len(lines) * size * 1.25 / 72 > 3.9 or
+                                 max(len(x) for x in lines) * size * 0.6 / 72 > colw - 0.4):
+                size -= 1
+            box_h = len(lines) * size * 1.25 / 72 + 0.4
+            self.rect(s, x, y, colw, box_h, "1E2230", shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
+            tb = self.textbox(s, x + 0.2, y + 0.2, colw - 0.4, box_h - 0.3,
+                              [(ln if ln else " ", 0, {"space_after": 0, "font": self.code_font,
+                                                       "align": PP_ALIGN.LEFT}) for ln in lines],
+                              size, color="E6E8EF", spacing=1.0)
+            for p in tb.text_frame.paragraphs:
+                p._p.get_or_add_pPr().set("rtl", "0")
+            if blk.get("explanation"):
+                top = y + box_h + 0.12
+                esize, _ = self.fit_size([blk["explanation"]], colw, BODY_BOTTOM - top, 15, 10)
+                self.textbox(s, x, top, colw, BODY_BOTTOM - top, [blk["explanation"]], esize, color=self.T["muted"])
 
     def build(self, out: Path):
         n, L = self.n, self.L
@@ -729,17 +824,12 @@ class Deck:
         for q in n.get("review_questions", []):
             qs_by_sec.setdefault(str(q.get("section", "")).split(".")[0], []).append(q)
         used_q = set()
-        for num, depth, sec in walk_sections(n["sections"]):
-            if depth == 1:
-                self.root_title = sec.get("title", "")
-                self.divider(num, sec)
-            self.section_slides(num, depth, sec)
-            if depth == 1 and self.meta.get("section_quizzes", True):
-                # end-of-section check: up to 3 questions tagged with this section
-                pool = [q for q in qs_by_sec.get(num, []) if id(q) not in used_q][:3]
-                for q in pool:
-                    used_q.add(id(q))
-                self.quiz_slides(pool, f"{L['check']}: {plain(sec.get('title', ''))}")
+        for i, sec in enumerate(n["sections"], 1):
+            pool = []
+            if self.meta.get("section_quizzes", True):
+                pool = [q for q in qs_by_sec.get(str(i), []) if id(q) not in used_q][:3]
+                used_q.update(id(q) for q in pool)
+            self.top_section(str(i), sec, pool)
         if n.get("key_takeaways"):
             self.bullet_slide(L["takeaways"], n["key_takeaways"], numbered=True)
         if n.get("common_mistakes"):
@@ -763,9 +853,19 @@ class Deck:
                               "rows": [[g.get("term", ""), g.get("definition", "")] for g in items]},
                              None, L["glossary"])
         remaining = [q for q in n.get("review_questions", []) if id(q) not in used_q]
-        if remaining:
-            for i in range(0, len(remaining), 6):
-                self.quiz_slides(remaining[i:i + 6], L["questions"])
+        cap = int(self.meta.get("deck_final_quiz", 12))
+        if remaining and cap > 0:
+            # a varied final quiz: spread picks across sections and difficulties; the doc keeps all questions
+            remaining.sort(key=lambda q: ({"easy": 0, "medium": 1, "hard": 2}.get(q.get("difficulty"), 1)))
+            pick = remaining[::max(1, len(remaining) // cap)][:cap]
+            for i in range(0, len(pick), 6):
+                self.quiz_slides(pick[i:i + 6], L["questions"])
+        # every slide gets speaker notes: fall back to the slide's own text
+        for sl in self.prs.slides:
+            tf = sl.notes_slide.notes_text_frame
+            if len(tf.text.strip()) < 20:
+                body = [sh.text_frame.text for sh in sl.shapes if sh.has_text_frame and sh.text_frame.text.strip()]
+                tf.text = (tf.text + "\n" if tf.text.strip() else "") + "\n".join(body[:-2] if len(body) > 2 else body)
         out.parent.mkdir(parents=True, exist_ok=True)
         self.prs.core_properties.title = plain(self.meta.get("title", ""))
         self.prs.save(str(out))
@@ -780,6 +880,9 @@ def main():
     notes = load_notes(a.notes)
     out, n = Deck(notes, Path(a.notes).resolve().parent).build(Path(a.output))
     print(f"[build_pptx] wrote {out} ({n} slides)")
+    if n > 90:
+        print("[build_pptx] NOTE: the deck is long for review. Consider marking secondary blocks with "
+              '"slide": false, giving long paragraphs a short "short" bullet list, or merging small tables.')
 
 
 if __name__ == "__main__":

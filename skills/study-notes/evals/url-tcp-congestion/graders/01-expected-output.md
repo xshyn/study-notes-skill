@@ -1,7 +1,0 @@
----
-type: llm
-focus: trace
-weight: 1
----
-
-The result matches this description: Exam-oriented .docx and .pptx covering the page: congestion window, slow start, congestion avoidance/AIMD, fast retransmit/fast recovery, the main algorithms (Tahoe, Reno, NewReno, CUBIC, BBR, etc.), with exam tips, common mistakes, worked cwnd traces and many practice questions with answers.

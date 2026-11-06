@@ -101,12 +101,23 @@ python scripts/build_pptx.py work/notes.json -o "outputs/<Topic> - Study Deck.pp
 
 The document has a cover, overview/objectives, clickable contents, numbered sections with
 "In brief" boxes and styled callouts, then takeaways, mistakes, tips, a cheat-sheet grid,
-glossary, questions grouped by type with a separate answer key, and flashcards.
-The deck has a title slide, objectives, roadmap, a divider per section, content slides that are
-auto-sized and auto-paginated (no overflow), definition cards, worked-example layouts, formula,
-code and table slides, a "Check yourself" quiz after each section, and the back matter — with
-speaker notes on every slide carrying the full explanation. RTL languages are laid out
-right-to-left automatically.
+glossary, questions grouped by type with a separate answer key, and flashcards. **Everything in
+the JSON goes into the document** — it is the complete reference.
+
+The deck is the *review* companion, so it is deliberately more compact. Per section it shows a
+divider, key-term cards (all the section's definitions together), the content (text flows across
+subsections onto shared slides; examples, formulas, code, tables, figures and diagrams get their
+own slides; small code listings are paired side by side), a "Remember" slide collecting the
+section's key points, common mistakes, exam tips and mnemonics, and a "Check yourself" quiz with
+the answers in the speaker notes. `note` and `intuition` callouts go to speaker notes. Text is
+auto-sized and auto-paginated (no overflow), every slide has speaker notes, and RTL languages are
+laid out right-to-left automatically.
+
+**Keep the deck reviewable — about 1.5–3 slides per source page, usually 30–90 slides.** The
+builder prints the slide count and warns above 90. To trim without losing anything from the doc:
+add `"slide": false` to secondary blocks (alternative code variants, reference tables a learner
+won't flip through, a second example of the same idea), give long paragraphs a `short` list of
+2–4 bullets, and merge small tables that compare the same things. Rebuild and check the count.
 
 ## Step 5 — Look at the result
 

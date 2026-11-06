@@ -53,6 +53,8 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
 | `short_title` | footer text on slides if the title is long |
 | `section_page_breaks` | `false` to run sections together in the doc |
 | `section_quizzes` | `false` to omit the per-section "Check yourself" slides |
+| `deck_section_answer_slides` | `true` to show section-quiz answers on their own slide (default: answers in speaker notes) |
+| `deck_final_quiz` | how many of the remaining questions the deck's final quiz shows (default 12; the doc always has all) |
 
 ## 3. Sections
 
@@ -76,6 +78,9 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
 
 Every block has a `type`. Unknown types render as text.
 
+Any block may also carry `"slide": false` — it stays in the document but is left out of the deck.
+Use it to keep the review deck compact (see SKILL.md, Step 4).
+
 ### text
 ```json
 {"type": "text", "text": "Full explanatory paragraph…", "short": ["Optional slide bullet 1", "bullet 2"]}
@@ -93,13 +98,15 @@ for paragraphs longer than ~3 sentences). The full text always goes into the spe
 {"type": "definition", "term": "Prime implicant", "aka": "PI", "definition": "…",
  "example": "optional short example", "note": "optional caveat"}
 ```
-Consecutive definitions are grouped into a card grid on slides (up to 4 per slide).
+On slides, all definitions of a top-level section are shown together as key-term cards right
+after the section divider (up to 6 per slide when short).
 
 ### Callouts: `key_point`, `warning` (common mistake), `tip` (exam tip), `mnemonic`, `note`, `intuition`
 ```json
 {"type": "warning", "text": "…", "title": "optional custom label", "items": ["optional bullets"]}
 ```
-Consecutive callouts share a slide (up to 3).
+In the deck, `key_point`, `warning`, `tip` and `mnemonic` are gathered onto the section's
+"Remember" slide; `note` and `intuition` go to speaker notes (they are elaboration).
 
 ### example (worked example)
 ```json
