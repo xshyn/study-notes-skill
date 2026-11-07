@@ -29,7 +29,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -119,7 +119,9 @@ class Deck:
             f.bold = bool(bold or fmt.get("bold"))
             f.italic = bool(italic or fmt.get("italic"))
             if fmt.get("code"):
-                f.color.rgb = rgb("A61B4A")
+                # readable inline code on dark (title/divider) slides as well as light ones
+                f.color.rgb = rgb("FFD58A" if color.upper() in ("FFFFFF", "DDE1F2", "C9CEE6", "AEB4D6", "E6E8EF")
+                                  else "A61B4A")
             elif fmt.get("highlight"):
                 f.color.rgb = rgb(self.T["accent"])
             else:
@@ -590,7 +592,7 @@ class Deck:
                 qparas.append((ln if ln else " ", 0, {"font": self.code_font, "size": 13, "space_after": 0,
                                                       "align": PP_ALIGN.LEFT, "ltr_code": True}))
             for oi, opt in enumerate(q.get("options") or []):
-                qparas.append((f"{chr(65 + oi)}. {opt}", 1, {"size": 0}))
+                qparas.append((f"{chr(65 + oi)}. {clean_option(opt)}", 1, {"size": 0}))
         # fix nested option sizes later in fit (size=0 sentinel -> use size-2)
         qparas = [(t, l, {k: v for k, v in o.items() if not (k == "size" and v == 0)}) for t, l, o in qparas]
         answers_txt = " ".join(f"Q{i}. {plain(q.get('answer', ''))} {plain(q.get('explanation', ''))}"

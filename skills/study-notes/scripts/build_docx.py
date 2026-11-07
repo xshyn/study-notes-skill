@@ -25,7 +25,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor, Emu
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -295,6 +295,8 @@ class Builder:
         self._table_rtl(t)
         cell = t.cell(0, 0)
         cell.width = Inches(width_in or CONTENT_W_IN)
+        # keep callouts in one piece: never leave a lone label at the bottom of a page
+        t.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
         self._shade_cell(cell, fill)
         self._cell_borders(cell, color=border_color or fill, left_bar=bar)
         self._cell_margins(cell)
@@ -813,7 +815,7 @@ class Builder:
                     self._code_into(self.doc, q["code"])
                 if q.get("options"):
                     for oi, opt in enumerate(q["options"]):
-                        op = self.para(f"{chr(65 + oi)}.  {opt}")
+                        op = self.para(f"{chr(65 + oi)}.  {clean_option(opt)}")
                         op.paragraph_format.left_indent = Inches(0.35)
                         op.paragraph_format.space_after = Pt(1)
         self.page_break()

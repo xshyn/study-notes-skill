@@ -127,6 +127,11 @@ def inline_runs(text: str) -> list[tuple[str, dict]]:
     return out
 
 
+def clean_option(opt) -> str:
+    """Drop a leading 'a)', 'A.', '(b)' label — the builders number options themselves."""
+    return re.sub(r"^\s*\(?[A-Ha-h1-8][\)\.:]\s+", "", str(opt))
+
+
 def plain(text: str) -> str:
     return "".join(t for t, _ in inline_runs(text))
 
