@@ -759,6 +759,23 @@ class Builder:
                     self.runs(p, item_text(it), size=9.5)
                     self._par_dir(p)
 
+    @staticmethod
+    def _split_code(text):
+        """Multi-line Q/A text: first line stays prose; the rest is code (LTR box).
+        A ```fenced``` block is always treated as code."""
+        text = text or ""
+        if "```" in text:
+            pre, _, rest = text.partition("```")
+            code = rest.split("\n", 1)[1] if "\n" in rest else rest
+            code = code.split("```")[0]
+            return pre.strip(), code.rstrip()
+        if "\n" not in text:
+            return text, None
+        head, rest = text.split("\n", 1)
+        if head.lstrip().startswith(("class ", "def ", "import ", "from ")):
+            return "", text
+        return head, rest
+
     def questions(self, qs):
         L = self.L
         self.heading(L["questions"], 1, "end_review_questions")
@@ -785,10 +802,15 @@ class Builder:
                 numbering[id(q)] = k
                 p = self.para("")
                 self.runs(p, f"Q{k}. ", bold=True, color=self.T["primary"])
-                self.runs(p, q.get("question", ""))
+                qtext, qcode = self._split_code(q.get("question", ""))
+                self.runs(p, qtext)
                 if q.get("difficulty"):
                     dot = {"easy": "●○○", "medium": "●●○", "hard": "●●●"}.get(q["difficulty"], "")
                     self.runs(p, f"  {dot}", size=8, color=self.T["accent"])
+                if qcode:
+                    self._code_into(self.doc, qcode)
+                if q.get("code"):
+                    self._code_into(self.doc, q["code"])
                 if q.get("options"):
                     for oi, opt in enumerate(q["options"]):
                         op = self.para(f"{chr(65 + oi)}.  {opt}")
@@ -802,7 +824,12 @@ class Builder:
                 k = numbering[id(q)]
                 p = self.para("")
                 self.runs(p, f"Q{k}. ", bold=True, color=self.T["primary"])
-                self.runs(p, q.get("answer", ""))
+                atext, acode = self._split_code(q.get("answer", ""))
+                self.runs(p, atext)
+                if acode:
+                    self._code_into(self.doc, acode)
+                if q.get("answer_code"):
+                    self._code_into(self.doc, q["answer_code"])
                 if q.get("explanation"):
                     self.para(q["explanation"], size=9.5, color=self.T["muted"]).paragraph_format.left_indent = \
                         Inches(0.3)

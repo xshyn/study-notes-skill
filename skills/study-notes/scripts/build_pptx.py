@@ -157,6 +157,8 @@ class Deck:
             if bullet:
                 self._bullet(p, bullet, level, psize, opts.get("bullet_color", self.T["accent"]))
             self._para_dir(p, opts.get("align", align))
+            if opts.get("ltr_code"):
+                p._p.get_or_add_pPr().set("rtl", "0")
             self._runs(p, text, psize, opts.get("color", color), opts.get("bold", bold),
                        opts.get("italic", italic), opts.get("font", font))
         return tb
@@ -398,7 +400,9 @@ class Deck:
         if b.get("text"):
             left.append((b["text"], 0, {}))
         if b.get("code"):
-            left.append((b["code"], 0, {"font": self.code_font, "size": 13}))
+            for ln in b["code"].rstrip("\n").split("\n"):
+                left.append((ln if ln else " ", 0, {"font": self.code_font, "size": 12, "space_after": 0,
+                                                    "align": PP_ALIGN.LEFT, "ltr_code": True}))
         right = [(st, 0, {"bullet": "num"}) for st in steps]
         if b.get("solution"):
             right.append((b["solution"], 0, {}))
@@ -577,7 +581,14 @@ class Deck:
         qparas = []
         for q in qs:
             self.qn += 1
-            qparas.append((f"**Q{self.qn}.** {q.get('question', '')}", 0, {}))
+            qtext = q.get('question', '').replace("```python", "").replace("```", "").strip("\n")
+            if q.get("code"):
+                qtext = qtext + "\n" + q["code"]
+            head, _, rest = qtext.partition("\n")
+            qparas.append((f"**Q{self.qn}.** {head}", 0, {}))
+            for ln in (rest.split("\n") if rest else []):
+                qparas.append((ln if ln else " ", 0, {"font": self.code_font, "size": 13, "space_after": 0,
+                                                      "align": PP_ALIGN.LEFT, "ltr_code": True}))
             for oi, opt in enumerate(q.get("options") or []):
                 qparas.append((f"{chr(65 + oi)}. {opt}", 1, {"size": 0}))
         # fix nested option sizes later in fit (size=0 sentinel -> use size-2)

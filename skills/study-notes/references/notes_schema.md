@@ -170,9 +170,13 @@ source) is shown as a code block. Use for processes, hierarchies, state machines
    "type": "recall | conceptual | application | problem | compare | analysis | mcq | true_false",
    "difficulty": "easy | medium | hard",
    "options": ["only for mcq"],
+   "code": "optional code the question refers to (rendered left-to-right in a code box)",
+   "answer_code": "optional code in the answer",
    "section": "2"}
 ]
 ```
+- Put code in `code` / `answer_code`, not inside `question` / `answer` text — prose and code then
+  render correctly even in right-to-left languages.
 - Tag every question with the top-level `section` number it tests: the deck shows up to 3 tagged
   questions as a "Check yourself" quiz after that section; the rest go in the final quiz.
 - The doc prints questions grouped by type and sorted by difficulty, with a separate answer key.
