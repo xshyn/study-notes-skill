@@ -23,6 +23,8 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
   "overview": "2–4 sentence big-picture paragraph (string or list of strings)",
   "learning_objectives": ["Action-verb outcomes: Explain…, Derive…, Compare…"],
   "prerequisites": ["What the learner should already know"],
+  "exam_priorities": [{"topic": "Slow start vs congestion avoidance", "priority": "high",
+                       "focus": "growth rule in each phase, when ssthresh switches them"}],
   "sections": [ ... ],
   "key_takeaways": ["…"],
   "common_mistakes": [{"mistake": "…", "correction": "…"}],
@@ -54,7 +56,8 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
 | `section_page_breaks` | `false` to run sections together in the doc |
 | `section_quizzes` | `false` to omit the per-section "Check yourself" slides |
 | `deck_section_answer_slides` | `true` to show section-quiz answers on their own slide (default: answers in speaker notes) |
-| `deck_final_quiz` | how many of the remaining questions the deck's final quiz shows (default 12; the doc always has all) |
+| `deck_final_quiz` | how many of the remaining questions the deck's final quiz shows (default 8; the doc always has all) |
+| `deck_glossary` | `true` to add glossary slides to the deck (default: glossary only in the doc) |
 
 ## 3. Sections
 
@@ -63,6 +66,7 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
   "title": "Building and reading a K-map",
   "source_ref": "pp. 73–85",
   "summary": "One or two sentences: the gist of this section.",
+  "slide_bullets": ["3–6 crisp review bullets for the deck (your words)"],
   "blocks": [ ... ],
   "takeaways": ["optional per-section recap bullets"],
   "subsections": [ { "title": "…", "summary": "…", "blocks": [ ... ] } ]
@@ -78,8 +82,10 @@ Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` 
 
 Every block has a `type`. Unknown types render as text.
 
-Any block may also carry `"slide": false` — it stays in the document but is left out of the deck.
-Use it to keep the review deck compact (see SKILL.md, Step 4).
+**Deck curation.** Mark the blocks that should appear in the review deck with `"slide": true`
+(and give sections `slide_bullets`). As soon as any marker exists, the deck shows only marked
+content; unmarked blocks stay in the document and their text goes to speaker notes. Without any
+markers every block is shown (except `"slide": false`), which makes a long deck.
 
 ### text
 ```json

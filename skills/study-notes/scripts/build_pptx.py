@@ -29,7 +29,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -68,7 +68,10 @@ class Deck:
         self.k = 0
         self.char_w = 0.56 if self.rtl else 0.5  # average glyph width in em
         self.qn = 0
+        self.bt = BODY_TOP          # body top; moves down when a lead line sits under the title
+        self._lead = None
         self.root_title = ""
+        self.curated = False
 
     # ------------------------------------------------------------------ primitives
     def new_slide(self, notes: str | None = None, dark=False):
@@ -234,6 +237,12 @@ class Deck:
         tsize, _ = self.fit_size([t], W - 2 * MARGIN, 0.8, 30, 20)
         self.textbox(slide, x, TITLE_TOP + 0.08, W - 2 * MARGIN, 0.85, [t], tsize, color=self.T["primary"],
                      bold=True, font=self.hfont, anchor=MSO_ANCHOR.MIDDLE)
+        if self._lead:
+            paras, notes = self._lead
+            self.textbox(slide, x, BODY_TOP - 0.05, W - 2 * MARGIN, self.bt - BODY_TOP, paras, 17,
+                         color=self.T["ink"])
+            self.add_notes(slide, notes)
+            self._lead = None
         self.k += 1
         foot = plain(self.meta.get("short_title") or self.meta.get("title", ""))
         self.textbox(slide, MARGIN, H - 0.42, W - 2 * MARGIN - 1, 0.3, [foot], 9, color=self.T["muted"],
@@ -266,11 +275,11 @@ class Deck:
             paras.append((item_text(it), 0, {"bullet": "num" if numbered else "•"}))
             for ch in item_children(it):
                 paras.append((item_text(ch), 1, {"bullet": "–"}))
-        width, height = W - 2 * MARGIN, BODY_BOTTOM - BODY_TOP
+        width, height = W - 2 * MARGIN, BODY_BOTTOM - self.bt
         for i, (chunk, size) in enumerate(self.split_to_fit(paras, width, height, start)):
             s = self.new_slide(notes)
             self.chrome(s, title, kicker, continued=i > 0)
-            self.textbox(s, MARGIN, BODY_TOP, width, height, chunk, size)
+            self.textbox(s, MARGIN, self.bt, width, height, chunk, size)
 
     def objectives_slide(self):
         if self.n.get("learning_objectives"):
@@ -289,13 +298,13 @@ class Deck:
         cols = 2 if n > 6 else 1
         per = math.ceil(n / cols)
         colw = (W - 2 * MARGIN - 0.4 * (cols - 1)) / cols
-        rowh = min(0.78, (BODY_BOTTOM - BODY_TOP) / per)
+        rowh = min(0.78, (BODY_BOTTOM - self.bt) / per)
         for i, sec in enumerate(secs):
             c, r = divmod(i, per)
             x = MARGIN + c * (colw + 0.4)
             if self.rtl:
                 x = W - MARGIN - colw - c * (colw + 0.4)
-            y = BODY_TOP + r * rowh
+            y = self.bt + r * rowh
             badge_x = x + colw - 0.55 if self.rtl else x
             self.rect(s, badge_x, y + 0.08, 0.55, rowh - 0.2, self.T["primary"], shape=MSO_SHAPE.ROUNDED_RECTANGLE,
                       radius=0.2)
@@ -332,7 +341,7 @@ class Deck:
             cols = 3 if per == 6 and len(chunk) > 4 else (2 if len(chunk) > 1 else 1)
             rows = math.ceil(len(chunk) / cols)
             gw = (W - 2 * MARGIN - 0.3 * (cols - 1)) / cols
-            gh = (BODY_BOTTOM - BODY_TOP - 0.25 * (rows - 1)) / rows
+            gh = (BODY_BOTTOM - self.bt - 0.25 * (rows - 1)) / rows
             need = max(self.est_height([d.get("definition", d.get("text", ""))] +
                                        ([f"e.g. {d['example']}"] if d.get("example") else []), gw - 0.5, 20) + 1.1
                        for d in chunk)
@@ -341,7 +350,7 @@ class Deck:
                 r, c = divmod(i, cols)
                 if self.rtl:
                     c = cols - 1 - c
-                x, y = MARGIN + c * (gw + 0.3), BODY_TOP + r * (gh + 0.25)
+                x, y = MARGIN + c * (gw + 0.3), self.bt + r * (gh + 0.25)
                 self.rect(s, x, y, gw, gh, self.T["soft"], shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.06)
                 self.rect(s, x + gw - 0.09 if self.rtl else x, y + 0.15, 0.09, gh - 0.3, self.T["primary"])
                 paras = [(d.get("term", ""), 0, {"bold": True, "color": self.T["primary"], "size": 0})]
@@ -360,7 +369,7 @@ class Deck:
             self.chrome(s, title, kicker, continued=pg > 0)
             n = len(chunk)
             gap = 0.22
-            avail = BODY_BOTTOM - BODY_TOP - gap * (n - 1)
+            avail = BODY_BOTTOM - self.bt - gap * (n - 1)
             bodies = []
             for b in chunk:
                 body = ([(b["text"], 0, {})] if b.get("text") else []) + \
@@ -371,7 +380,7 @@ class Deck:
                 heights = need
             else:
                 heights = [avail * x / sum(need) for x in need]
-            y = BODY_TOP
+            y = self.bt
             for b, h in zip(chunk, heights):
                 kind = {"pitfall": "warning", "mistake": "warning", "exam_tip": "tip", "important": "key_point",
                         "callout": "key_point"}.get(b["type"], b["type"])
@@ -415,7 +424,7 @@ class Deck:
         two_col = bool(right) and bool(left)
         lw = (W - 2 * MARGIN) * (0.42 if two_col else 1.0)
         rw = (W - 2 * MARGIN) - lw - 0.3
-        height = BODY_BOTTOM - BODY_TOP
+        height = BODY_BOTTOM - self.bt
         lsize, lfit = self.fit_size(left, lw - 0.5, height - 0.4, 20)
         rpages = self.split_to_fit(right, rw - 0.4, height - 0.4, 20) if right else [([], 20)]
         for i, (rchunk, rsize) in enumerate(rpages):
@@ -425,10 +434,10 @@ class Deck:
             rx = MARGIN if self.rtl else MARGIN + lw + 0.3
             box_h = min(height, max(self.est_height(left, lw - 0.5, lsize),
                                     self.est_height(rchunk, rw - 0.4, rsize) if two_col else 0) + 0.75)
-            self.rect(s, lx, BODY_TOP, lw, box_h, self.T["soft"], shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
-            self.textbox(s, lx + 0.25, BODY_TOP + 0.2, lw - 0.5, height - 0.4, left, lsize)
+            self.rect(s, lx, self.bt, lw, box_h, self.T["soft"], shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
+            self.textbox(s, lx + 0.25, self.bt + 0.2, lw - 0.5, height - 0.4, left, lsize)
             if two_col:
-                self.textbox(s, rx + 0.1, BODY_TOP + 0.2, rw - 0.2, height - 0.4,
+                self.textbox(s, rx + 0.1, self.bt + 0.2, rw - 0.2, height - 0.4,
                              [(self.L["solution"], 0, {"bold": True, "color": self.T["primary"], "size": 13})]
                              + rchunk, rsize)
 
@@ -438,7 +447,7 @@ class Deck:
                                                   "; ".join(f"{v.get('symbol')}: {v.get('meaning')}"
                                                             for v in b.get("variables", []))])))
         self.chrome(s, title, kicker)
-        y = BODY_TOP + 0.1
+        y = self.bt + 0.1
         box_h = 1.7
         self.rect(s, MARGIN, y, W - 2 * MARGIN, box_h, self.T["soft"], shape=MSO_SHAPE.ROUNDED_RECTANGLE,
                   radius=0.08)
@@ -468,7 +477,7 @@ class Deck:
 
     def code_slide(self, b, kicker):
         lines = b.get("code", "").rstrip("\n").split("\n")
-        height = BODY_BOTTOM - BODY_TOP
+        height = BODY_BOTTOM - self.bt
         has_expl = bool(b.get("explanation"))
         code_h = height - (1.0 if has_expl else 0)
         longest = max((len(ln) for ln in lines), default=10)
@@ -483,9 +492,9 @@ class Deck:
             s = self.new_slide(b.get("explanation"))
             self.chrome(s, title, kicker, continued=pg > 0)
             box_h = min(code_h, len(chunk) * size * 1.25 / 72 + 0.5)
-            self.rect(s, MARGIN, BODY_TOP, W - 2 * MARGIN, box_h, "1E2230", shape=MSO_SHAPE.ROUNDED_RECTANGLE,
+            self.rect(s, MARGIN, self.bt, W - 2 * MARGIN, box_h, "1E2230", shape=MSO_SHAPE.ROUNDED_RECTANGLE,
                       radius=0.03)
-            tb = self.textbox(s, MARGIN + 0.25, BODY_TOP + 0.2, W - 2 * MARGIN - 0.5, code_h - 0.4,
+            tb = self.textbox(s, MARGIN + 0.25, self.bt + 0.2, W - 2 * MARGIN - 0.5, code_h - 0.4,
                               [(ln if ln else " ", 0, {"space_after": 0, "font": self.code_font,
                                                        "align": PP_ALIGN.LEFT}) for ln in chunk],
                               size, color="E6E8EF", spacing=1.0)
@@ -493,7 +502,7 @@ class Deck:
                 p._p.get_or_add_pPr().set("rtl", "0")
             if has_expl and pg == 0:
                 esize, _ = self.fit_size([b["explanation"]], W - 2 * MARGIN, 0.85, 16, 11)
-                self.textbox(s, MARGIN, BODY_TOP + box_h + 0.15, W - 2 * MARGIN, 0.85, [b["explanation"]], esize,
+                self.textbox(s, MARGIN, self.bt + box_h + 0.15, W - 2 * MARGIN, 0.85, [b["explanation"]], esize,
                              color=self.T["muted"])
 
     def table_slide(self, b, kicker, title=None):
@@ -502,7 +511,7 @@ class Deck:
         ncols = max([len(headers)] + [len(r) for r in rows] + [1])
         title = title or b.get("title") or b.get("caption") or "Comparison"
         width = W - 2 * MARGIN
-        avail = BODY_BOTTOM - BODY_TOP - 0.1
+        avail = BODY_BOTTOM - self.bt - 0.1
         # choose font size & rows per slide
         col_chars = [max([len(plain(str(headers[i]))) if i < len(headers) else 0] +
                          [len(plain(str(r[i]))) if i < len(r) else 0 for r in rows] + [4]) for i in range(ncols)]
@@ -537,7 +546,7 @@ class Deck:
             self.chrome(s, title, kicker, continued=pi > 0)
             nrows = len(pr) + (1 if headers else 0)
             total_h = (row_h(headers, size) if headers else 0) + sum(row_h(r, size) for r in pr)
-            gt = s.shapes.add_table(nrows, ncols, Inches(MARGIN), Inches(BODY_TOP), Inches(width),
+            gt = s.shapes.add_table(nrows, ncols, Inches(MARGIN), Inches(self.bt), Inches(width),
                                     Inches(min(total_h, avail))).table
             tblpr = gt._tbl.tblPr
             if self.rtl:
@@ -567,11 +576,11 @@ class Deck:
         s = self.new_slide(notes or caption)
         self.chrome(s, title or caption or "Figure", kicker)
         cap_h = 0.45 if caption else 0
-        bw, bh = W - 2 * MARGIN, BODY_BOTTOM - BODY_TOP - cap_h
+        bw, bh = W - 2 * MARGIN, BODY_BOTTOM - self.bt - cap_h
         w, h = image_size(path)
         scale = min(bw / w, bh / h)
         iw, ih = w * scale, h * scale
-        s.shapes.add_picture(str(path), Inches((W - iw) / 2), Inches(BODY_TOP + (bh - ih) / 2), Inches(iw), Inches(ih))
+        s.shapes.add_picture(str(path), Inches((W - iw) / 2), Inches(self.bt + (bh - ih) / 2), Inches(iw), Inches(ih))
         if caption:
             self.textbox(s, MARGIN, BODY_BOTTOM - cap_h + 0.05, bw, cap_h, [caption], 12, color=self.T["muted"],
                          italic=True, align=PP_ALIGN.CENTER)
@@ -611,11 +620,11 @@ class Deck:
         self.bullet_slide_raw(f"{title} — {self.L['answers']}", aparas, kicker)
 
     def bullet_slide_raw(self, title, paras, kicker=None, notes=None, start=20):
-        width, height = W - 2 * MARGIN, BODY_BOTTOM - BODY_TOP
+        width, height = W - 2 * MARGIN, BODY_BOTTOM - self.bt
         for i, (chunk, size) in enumerate(self.split_to_fit(paras, width, height, start)):
             s = self.new_slide(notes)
             self.chrome(s, title, kicker, continued=i > 0)
-            self.textbox(s, MARGIN, BODY_TOP, width, height, chunk, size)
+            self.textbox(s, MARGIN, self.bt, width, height, chunk, size)
 
     def cheat_slides(self, groups):
         groups = [g if isinstance(g, dict) else {"heading": "", "items": [g]} for g in groups]
@@ -627,12 +636,12 @@ class Deck:
             cols = 3 if len(chunk) > 4 else 2 if len(chunk) > 1 else 1
             rows = math.ceil(len(chunk) / cols)
             gw = (W - 2 * MARGIN - 0.25 * (cols - 1)) / cols
-            gh = (BODY_BOTTOM - BODY_TOP - 0.2 * (rows - 1)) / rows
+            gh = (BODY_BOTTOM - self.bt - 0.2 * (rows - 1)) / rows
             for i, g in enumerate(chunk):
                 r, c = divmod(i, cols)
                 if self.rtl:
                     c = cols - 1 - c
-                x, y = MARGIN + c * (gw + 0.25), BODY_TOP + r * (gh + 0.2)
+                x, y = MARGIN + c * (gw + 0.25), self.bt + r * (gh + 0.2)
                 self.rect(s, x, y, gw, gh, self.T["soft"], shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.05)
                 body = [(item_text(it), 0, {"bullet": "•"}) for it in g.get("items", [])]
                 size, _ = self.fit_size(body, gw - 0.35, gh - 0.65, 15, 9)
@@ -644,6 +653,11 @@ class Deck:
     CALLOUT_TYPES = ("key_point", "warning", "tip", "mnemonic", "note", "intuition", "pitfall", "mistake",
                      "exam_tip", "important", "callout")
     NOTES_ONLY = ("note", "intuition")  # elaborations: speaker notes in the deck, boxes in the doc
+
+    def _on_deck(self, b):
+        """Curated decks (any block marked "slide": true, or any section with slide_bullets) show only
+        what the author picked; otherwise everything except "slide": false."""
+        return b.get("slide") is True if self.curated else b.get("slide", True) is not False
 
     @staticmethod
     def _norm(t):
@@ -661,7 +675,7 @@ class Deck:
         subtree = [(num, 1, sec)] + [(f"{num}.{n}", d + 1, s)
                                      for n, d, s in walk_sections(sec.get("subsections", []))]
         defs = [b for _, _, s in subtree for b in s.get("blocks", [])
-                if self._norm(b.get("type")) == "definition" and b.get("slide", True) is not False]
+                if self._norm(b.get("type")) == "definition" and self._on_deck(b)]
         if defs:
             self.definition_slide(self.L.get("key_terms", "Key terms"),
                                   defs, f"§{num}")
@@ -669,26 +683,83 @@ class Deck:
         self._flow = {"text": [], "notes": [], "code": [], "title": None, "kicker": None}
         for snum, depth, s in subtree:
             self.content_flow(snum, depth, s, remember)
-            for t in s.get("takeaways", []) or []:
-                remember.append(("key_point", item_text(t)))
+            if not self.curated:
+                for t in s.get("takeaways", []) or []:
+                    remember.append(("key_point", item_text(t)))
+        F = self._flow
+        if F["text"] and not F["code"] and len(F["text"]) <= 2 and \
+                self.est_height(F["text"], W - 2 * MARGIN, 18) <= 0.8 and (remember or quiz_pool):
+            # a lone sentence at the end of a section joins the review slide instead of its own slide
+            for t_, _, o_ in F["text"]:
+                if not o_.get("bold"):
+                    remember.insert(0, ("note", t_))
+            F["text"].clear()
+            F["notes"].clear()
         self._flush_flow()
-        if remember:
-            paras = []
-            for kind, text in remember:
-                bg, bar, _ = CALLOUTS.get(kind, CALLOUTS["note"])
-                paras.append((f"**{self.L.get(kind, kind)}:** {text}", 0, {"bullet": "■", "bullet_color": bar}))
-            self.bullet_slide_raw(f"{self.L.get('remember', 'Remember')}: {plain(sec.get('title', ''))}", paras,
+        rparas = []
+        for kind, text in remember:
+            bg, bar, _ = CALLOUTS.get(kind, CALLOUTS["note"])
+            rparas.append((f"**{self.L.get(kind, kind)}:** {text}", 0, {"bullet": "■", "bullet_color": bar}))
+        stitle = plain(sec.get("title", ""))
+        two_col_ok = rparas and quiz_pool and \
+            self.est_height(rparas, self.TEXT_W, 15) <= BODY_BOTTOM - BODY_TOP - 0.5 and \
+            self.est_height(self._quiz_paras(quiz_pool, peek=True), self.TEXT_W + 0.4, 15) <= BODY_BOTTOM - BODY_TOP - 0.5
+        if two_col_ok:
+            self.review_slide(f"{self.L.get('summary', 'Summary')}: {stitle}", rparas, quiz_pool, f"§{num}")
+            return
+        if rparas:
+            self.bullet_slide_raw(f"{self.L.get('remember', 'Remember')}: {stitle}", rparas,
                                   f"§{num}", notes=" ".join(plain(t) for _, t in remember))
         if quiz_pool:
-            self.quiz_slides(quiz_pool, f"{self.L['check']}: {plain(sec.get('title', ''))}", f"§{num}",
+            self.quiz_slides(quiz_pool, f"{self.L['check']}: {stitle}", f"§{num}",
                              answer_slide=bool(self.meta.get("deck_section_answer_slides", False)))
+
+    def _quiz_paras(self, qs, peek=False):
+        n = self.qn
+        out = []
+        for q in qs:
+            n += 1
+            qt = q.get("question", "").replace("```python", "").replace("```", "").strip("\n")
+            head, _, rest = qt.partition("\n")
+            code = "\n".join(filter(None, [rest, q.get("code", "")]))
+            out.append((f"**Q{n}.** {head}", 0, {}))
+            for ln in (code.split("\n") if code else []):
+                out.append((ln if ln else " ", 0, {"font": self.code_font, "size": 12, "space_after": 0,
+                                                   "align": PP_ALIGN.LEFT, "ltr_code": True}))
+            for oi, opt in enumerate(q.get("options") or []):
+                out.append((f"{chr(65 + oi)}. {clean_option(opt)}", 1, {}))
+        if not peek:
+            self.qn = n
+        return out
+
+    def review_slide(self, title, rparas, qs, kicker):
+        """End-of-section review: what to remember (left) + check-yourself questions (right)."""
+        start = self.qn
+        qparas = self._quiz_paras(qs)
+        answers = " ".join(f"Q{i}. {plain(q.get('answer', ''))} {plain(q.get('explanation', ''))}"
+                           for i, q in enumerate(qs, start + 1))
+        s = self.new_slide(f"{self.L['answers']}: {answers}")
+        self.chrome(s, title, kicker)
+        lw = self.TEXT_W
+        rw = W - 2 * MARGIN - lw - 0.4
+        lx = W - MARGIN - lw if self.rtl else MARGIN
+        rx = MARGIN if self.rtl else MARGIN + lw + 0.4
+        h = BODY_BOTTOM - BODY_TOP - 0.45
+        for x, w, label, paras, fill in ((lx, lw, self.L.get("remember", "Remember"), rparas, "FFF6E0"),
+                                         (rx, rw, self.L["check"], qparas, self.T["soft"])):
+            self.rect(s, x, BODY_TOP, w, BODY_BOTTOM - BODY_TOP, fill, shape=MSO_SHAPE.ROUNDED_RECTANGLE,
+                      radius=0.04)
+            size, _ = self.fit_size(paras, w - 0.5, h - 0.2, 17, 11)
+            self.textbox(s, x + 0.25, BODY_TOP + 0.15, w - 0.5, 0.4, [label.upper() if not self.rtl else label],
+                         12, color=self.T["primary"], bold=True)
+            self.textbox(s, x + 0.25, BODY_TOP + 0.6, w - 0.5, h - 0.2, paras, size)
 
     def content_flow(self, num, depth, sec, remember):
         """Text from consecutive (sub)sections flows onto shared slides (with sub-headings) until a
         visual block needs its own slide — this keeps review decks compact."""
         title = sec.get("title", "")
         kicker = f"§{num} · {plain(self.root_title)}" if depth > 1 else f"§{num}"
-        blocks = [b for b in sec.get("blocks", []) if b.get("slide", True) is not False]
+        blocks = [b for b in sec.get("blocks", []) if self._on_deck(b)]
         F = self._flow
         pending_text, pending_notes, pending_code = F["text"], F["notes"], F["code"]
         if F["title"] is None or not pending_text:
@@ -696,8 +767,15 @@ class Deck:
         if depth > 1:
             pending_text.append((f"{num}  {title}", 0, {"bold": True, "color": self.T["primary"],
                                                          "space_after": 4}))
-            if sec.get("summary"):
+            if sec.get("summary") and not sec.get("slide_bullets"):
                 pending_text.append((sec["summary"], 0, {"italic": True, "color": self.T["muted"]}))
+        for x in sec.get("slide_bullets") or []:
+            pending_text.append((item_text(x), 0, {"bullet": "•"}))
+            for ch in item_children(x):
+                pending_text.append((item_text(ch), 1, {"bullet": "–"}))
+        if self.curated:  # speaker notes carry the full explanation of what the slides leave out
+            pending_notes.extend(plain(b.get("text", "")) for b in sec.get("blocks", [])
+                                 if self._norm(b.get("type")) == "text" and not self._on_deck(b))
 
         def flush_text():
             if pending_text:
@@ -722,6 +800,25 @@ class Deck:
         def flush():
             flush_text()
             flush_code()
+
+        def lead_or_flush():
+            """Very short text before a visual becomes a lead line on that visual's slide
+            instead of a near-empty slide of its own."""
+            flush_code()
+            paras = list(pending_text)
+            h = self.est_height(paras, W - 2 * MARGIN, 17)
+            if paras and len(paras) <= 3 and h <= 1.15:
+                self._lead = (paras, " ".join(pending_notes))
+                self.bt = BODY_TOP + h + 0.1
+                pending_text.clear()
+                pending_notes.clear()
+                F["title"], F["kicker"] = title, kicker
+            else:
+                flush_text()
+
+        def done_visual():
+            self.bt = BODY_TOP
+            self._lead = None
 
         self._flush_flow = flush
         for i, b in enumerate(blocks):
@@ -754,30 +851,50 @@ class Deck:
                 for it in b.get("items", []):
                     remember.append((t, item_text(it)))
             elif t == "code":
-                pending_code.append(b)
+                if self._can_combo(pending_text, b):
+                    self.combo_slide(F["title"] or title, list(pending_text), b, F["kicker"] or kicker,
+                                     " ".join(pending_notes))
+                    pending_text.clear()
+                    pending_notes.clear()
+                    F["title"], F["kicker"] = title, kicker
+                else:
+                    pending_code.append(b)
             elif t == "example":
-                flush()
+                lead_or_flush()
                 self.example_slide(b, kicker)
+                done_visual()
             elif t == "formula":
-                flush()
+                lead_or_flush()
                 self.formula_slide(b, kicker)
+                done_visual()
             elif t == "table":
-                flush()
-                self.table_slide(b, kicker, b.get("title") or b.get("caption") or title)
+                flush_code()
+                if self._can_combo(pending_text, b):
+                    self.combo_slide(F["title"] or title, list(pending_text), b, F["kicker"] or kicker,
+                                     " ".join(pending_notes))
+                    pending_text.clear()
+                    pending_notes.clear()
+                    F["title"], F["kicker"] = title, kicker
+                else:
+                    lead_or_flush()
+                    self.table_slide(b, kicker, b.get("title") or b.get("caption") or title)
+                    done_visual()
             elif t == "image":
-                flush()
+                lead_or_flush()
                 p = Path(b.get("path", "")).expanduser()
                 p = p if p.is_absolute() else (self.base_dir / p)
                 if p.exists():
                     self.image_slide(p, b.get("title") or title, b.get("caption"), kicker)
+                done_visual()
             elif t == "diagram":
-                flush()
+                lead_or_flush()
                 png = self.tmp / f"d{self.k}_{i}.png"
                 code = b.get("mermaid") or b.get("code") or ""
                 if code and render_mermaid(code, png, width=2000):
                     self.image_slide(png, b.get("title") or title, b.get("caption"), kicker)
                 elif b.get("ascii"):
                     self.code_slide({"code": b["ascii"], "title": b.get("caption") or title}, kicker)
+                done_visual()
             elif t == "quote":
                 pending_text.append((f"“{b.get('text', '')}”" + (f" — {b['by']}" if b.get("by") else ""), 0,
                                      {"italic": True, "color": self.T["muted"]}))
@@ -785,6 +902,104 @@ class Deck:
                 pending_text.append((b["text"], 0, {"bullet": "•"}))
         if pending_code:
             flush()
+
+    TEXT_W = (W - 2 * MARGIN) * 0.44
+
+    def _small_table(self, b):
+        rows, hdr = b.get("rows") or [], b.get("headers") or []
+        ncols = max([len(hdr)] + [len(r) for r in rows] + [1])
+        cells = [plain(str(c)) for r in rows for c in r] + [plain(str(h)) for h in hdr]
+        return len(rows) <= 7 and ncols <= 3 and sum(len(c) for c in cells) <= 420 and \
+            max((len(c) for c in cells), default=0) <= 70
+
+    def _can_combo(self, paras, b):
+        if not paras:
+            return False
+        t = self._norm(b.get("type"))
+        small = self._small_table(b) if t == "table" else self._small_code(b) and \
+            max((len(x) for x in b.get("code", "").split("\n")), default=0) <= 48
+        return small and self.est_height(paras, self.TEXT_W, 16) <= (BODY_BOTTOM - self.bt) * 0.95
+
+    def combo_slide(self, title, paras, b, kicker, notes):
+        """Short explanation on one side, a small table or code listing on the other."""
+        s = self.new_slide(" ".join(filter(None, [notes, plain(b.get("explanation", "")),
+                                                  plain(b.get("note", ""))])))
+        self.chrome(s, title, kicker)
+        tw = self.TEXT_W
+        vw = W - 2 * MARGIN - tw - 0.4
+        tx = W - MARGIN - tw if self.rtl else MARGIN
+        vx = MARGIN if self.rtl else MARGIN + tw + 0.4
+        h = BODY_BOTTOM - self.bt
+        size, _ = self.fit_size(paras, tw, h, 20)
+        self.textbox(s, tx, self.bt, tw, h, paras, size)
+        y = self.bt
+        cap = b.get("title") or b.get("caption")
+        if cap:
+            self.textbox(s, vx, y, vw, 0.4, [cap], 13, color=self.T["primary"], bold=True)
+            y += 0.48
+        if self._norm(b.get("type")) == "table":
+            self.draw_table(s, b, vx, y, vw, BODY_BOTTOM - y)
+        else:
+            lines = b.get("code", "").rstrip("\n").split("\n")
+            csize = 15
+            while csize > 10 and (len(lines) * csize * 1.25 / 72 > BODY_BOTTOM - y - 1.2 or
+                                  max(len(x) for x in lines) * csize * 0.6 / 72 > vw - 0.4):
+                csize -= 1
+            box_h = len(lines) * csize * 1.25 / 72 + 0.4
+            self.rect(s, vx, y, vw, box_h, "1E2230", shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
+            tb = self.textbox(s, vx + 0.2, y + 0.2, vw - 0.4, box_h - 0.3,
+                              [(ln if ln else " ", 0, {"space_after": 0, "font": self.code_font,
+                                                       "align": PP_ALIGN.LEFT}) for ln in lines],
+                              csize, color="E6E8EF", spacing=1.0)
+            for p in tb.text_frame.paragraphs:
+                p._p.get_or_add_pPr().set("rtl", "0")
+            if b.get("explanation"):
+                top = y + box_h + 0.12
+                esize, _ = self.fit_size([b["explanation"]], vw, BODY_BOTTOM - top, 15, 10)
+                self.textbox(s, vx, top, vw, BODY_BOTTOM - top, [b["explanation"]], esize, color=self.T["muted"])
+
+    def draw_table(self, s, b, x, y, w, h):
+        headers = b.get("headers") or []
+        rows = b.get("rows") or []
+        ncols = max([len(headers)] + [len(r) for r in rows] + [1])
+        col_chars = [max([len(plain(str(headers[i]))) if i < len(headers) else 0] +
+                         [len(plain(str(r[i]))) if i < len(r) else 0 for r in rows] + [4]) for i in range(ncols)]
+        tot = sum(min(c, 40) for c in col_chars)
+        col_w = [w * min(c, 40) / tot for c in col_chars]
+        size = 15
+        all_rows = ([headers] if headers else []) + rows
+
+        def rh(r, sz):
+            lines = 1
+            for i in range(ncols):
+                txt = plain(str(r[i])) if i < len(r) else ""
+                cpl = max(4, (col_w[i] - 0.2) * 72 / (sz * 0.5))
+                lines = max(lines, math.ceil(max(1, len(txt)) / cpl))
+            return lines * sz * 1.2 / 72 + 0.14
+
+        while size > 10 and sum(rh(r, size) for r in all_rows) > h:
+            size -= 1
+        gt = s.shapes.add_table(len(all_rows), ncols, Inches(x), Inches(y), Inches(w),
+                                Inches(sum(rh(r, size) for r in all_rows))).table
+        if self.rtl:
+            gt._tbl.tblPr.set("rtl", "1")
+        for i, cw in enumerate(col_w):
+            gt.columns[i].width = Inches(cw)
+        for ri, r in enumerate(all_rows):
+            is_h = bool(headers) and ri == 0
+            gt.rows[ri].height = Inches(rh(r, size))
+            for ci in range(ncols):
+                cell = gt.cell(ri, ci)
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = rgb(self.T["primary"] if is_h else
+                                               (self.T["soft"] if ri % 2 == 0 else "FFFFFF"))
+                cell.margin_left = cell.margin_right = Inches(0.08)
+                cell.margin_top = cell.margin_bottom = Inches(0.04)
+                cell.text_frame.word_wrap = True
+                p = cell.text_frame.paragraphs[0]
+                self._para_dir(p)
+                self._runs(p, str(r[ci]) if ci < len(r) else "", size, "FFFFFF" if is_h else self.T["ink"],
+                           bold=bool(is_h or (ci == 0 and ncols > 2)))
 
     @staticmethod
     def _small_code(b):
@@ -799,7 +1014,7 @@ class Deck:
             x = MARGIN + ci * (colw + 0.3)
             if self.rtl:
                 x = W - MARGIN - colw - ci * (colw + 0.3)
-            y = BODY_TOP
+            y = self.bt
             cap = blk.get("title") or blk.get("caption")
             if cap:
                 self.textbox(s, x, y, colw, 0.4, [cap], 13, color=self.T["primary"], bold=True)
@@ -824,6 +1039,9 @@ class Deck:
 
     def build(self, out: Path):
         n, L = self.n, self.L
+        allsec = [s for _, _, s in walk_sections(n["sections"])]
+        self.curated = any(s.get("slide_bullets") for s in allsec) or \
+            any(b.get("slide") is True for s in allsec for b in s.get("blocks", []))
         self.title_slide()
         if n.get("overview"):
             ov = n["overview"] if isinstance(n["overview"], list) else [n["overview"]]
@@ -832,6 +1050,9 @@ class Deck:
                 paras += [(x, 0, {"bullet": "•"}) for x in sentences(o)]
             self.bullet_slide_raw(L["overview"], paras, notes=" ".join(ov))
         self.objectives_slide()
+        if n.get("exam_priorities"):
+            self.table_slide({"headers": [L["topic"], L["priority"], L["focus"]], "rows": priority_rows(n, L)},
+                             None, L["priorities"])
         self.roadmap_slide()
         qs_by_sec: dict[str, list] = {}
         for q in n.get("review_questions", []):
@@ -860,13 +1081,13 @@ class Deck:
                                None)
         if n.get("cheat_sheet"):
             self.cheat_slides(n["cheat_sheet"])
-        if n.get("glossary"):
+        if n.get("glossary") and self.meta.get("deck_glossary", False):
             items = sorted(n["glossary"], key=lambda g: plain(g.get("term", "")).lower())
             self.table_slide({"headers": [L["term"], L["definition"]],
                               "rows": [[g.get("term", ""), g.get("definition", "")] for g in items]},
                              None, L["glossary"])
         remaining = [q for q in n.get("review_questions", []) if id(q) not in used_q]
-        cap = int(self.meta.get("deck_final_quiz", 12))
+        cap = int(self.meta.get("deck_final_quiz", 8))
         if remaining and cap > 0:
             # a varied final quiz: spread picks across sections and difficulties; the doc keeps all questions
             remaining.sort(key=lambda q: ({"easy": 0, "medium": 1, "hard": 2}.get(q.get("difficulty"), 1)))

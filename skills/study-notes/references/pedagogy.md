@@ -79,6 +79,15 @@ at least 2–3 per major section.
 - Cheat sheet: what you'd put on one allowed sheet of paper — formulas, rules, procedures,
   key numbers — grouped under headings, terse.
 
+## Exam focus
+
+When the learner is preparing for an exam, rank the topics (`exam_priorities`): high = core
+mechanisms, definitions and procedures that are routinely examined (calculations, traces,
+compare/contrast); medium = supporting detail; low = history, niche variants, trivia. Spend the
+words, worked examples and questions accordingly, and say which ranking is your judgement rather
+than the source's. Numeric problems ("trace cwnd for 8 RTTs", "what does this code print?") are
+the most valuable practice for technical exams.
+
 ## Common mistakes and exam tips
 
 - Common mistakes are the misconceptions a learner is *likely* to have — state the mistake and the

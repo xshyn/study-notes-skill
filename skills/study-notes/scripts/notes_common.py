@@ -41,6 +41,11 @@ LABELS = {
            "definition": "Definition", "front": "Prompt", "back": "Answer", "page": "Page",
            "self_test": "Self-test plan", "difficulty": "Difficulty", "answer": "Answer",
            "true_false": "True or false", "continued": "cont.", "term": "Term", "formula": "Formula", "kicker": "STUDY NOTES", "code": "Code", "key_terms": "Key terms", "remember": "Remember",
+           "priorities": "Exam priorities", "topic": "Topic", "priority": "Priority", "focus": "What to know",
+           "high": "High", "medium": "Medium", "low": "Low", "see": "See §",
+           "q_recall": "Recall", "q_true_false": "True / false", "q_mcq": "Multiple choice",
+           "q_conceptual": "Conceptual understanding", "q_application": "Application", "q_problem": "Problems",
+           "q_compare": "Compare & contrast", "q_analysis": "Analysis", "q_code": "Code reading",
            "key_point": "Key point", "warning": "Common mistake", "tip": "Exam tip",
            "mnemonic": "Memory aid", "note": "Note", "intuition": "Intuition"},
     "fa": {"contents": "فهرست مطالب", "objectives": "اهداف یادگیری", "prereq": "پیش‌نیازها",
@@ -53,6 +58,11 @@ LABELS = {
            "definition": "تعریف", "front": "پرسش", "back": "پاسخ", "page": "صفحه",
            "self_test": "برنامه خودآزمایی", "difficulty": "سطح دشواری", "answer": "پاسخ",
            "true_false": "درست یا نادرست", "continued": "ادامه", "term": "اصطلاح", "formula": "فرمول", "kicker": "جزوه مطالعه", "code": "کد", "key_terms": "اصطلاحات کلیدی", "remember": "به خاطر بسپارید",
+           "priorities": "اولویت‌های امتحانی", "topic": "مبحث", "priority": "اولویت", "focus": "چه چیزی را بدانید",
+           "high": "بالا", "medium": "متوسط", "low": "پایین", "see": "بخش ",
+           "q_recall": "یادآوری", "q_true_false": "درست / نادرست", "q_mcq": "چندگزینه‌ای",
+           "q_conceptual": "مفهومی", "q_application": "کاربردی", "q_problem": "مسئله",
+           "q_compare": "مقایسه", "q_analysis": "تحلیل", "q_code": "خواندن کد",
            "key_point": "نکته کلیدی", "warning": "اشتباه رایج", "tip": "نکته امتحانی",
            "mnemonic": "ترفند حفظ کردن", "note": "یادداشت", "intuition": "شهود"},
     "ar": {"contents": "المحتويات", "objectives": "أهداف التعلم", "prereq": "المتطلبات السابقة",
@@ -65,6 +75,11 @@ LABELS = {
            "definition": "تعريف", "front": "سؤال", "back": "إجابة", "page": "صفحة",
            "self_test": "خطة الاختبار الذاتي", "difficulty": "الصعوبة", "answer": "الإجابة",
            "true_false": "صح أم خطأ", "continued": "تابع", "term": "المصطلح", "formula": "الصيغة", "kicker": "ملاحظات دراسية", "code": "الكود", "key_terms": "المصطلحات الأساسية", "remember": "تذكّر",
+           "priorities": "أولويات الامتحان", "topic": "الموضوع", "priority": "الأولوية", "focus": "ما يجب معرفته",
+           "high": "عالية", "medium": "متوسطة", "low": "منخفضة", "see": "القسم ",
+           "q_recall": "استرجاع", "q_true_false": "صح / خطأ", "q_mcq": "اختيار من متعدد",
+           "q_conceptual": "فهم المفاهيم", "q_application": "تطبيق", "q_problem": "مسائل",
+           "q_compare": "مقارنة", "q_analysis": "تحليل", "q_code": "قراءة الكود",
            "key_point": "نقطة أساسية", "warning": "خطأ شائع", "tip": "نصيحة امتحان",
            "mnemonic": "وسيلة للتذكر", "note": "ملاحظة", "intuition": "الحدس"},
 }
@@ -130,6 +145,22 @@ def inline_runs(text: str) -> list[tuple[str, dict]]:
 def clean_option(opt) -> str:
     """Drop a leading 'a)', 'A.', '(b)' label — the builders number options themselves."""
     return re.sub(r"^\s*\(?[A-Ha-h1-8][\)\.:]\s+", "", str(opt))
+
+
+RTL_CHARS = re.compile(r"[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]")
+
+
+def has_rtl(text: str) -> bool:
+    return bool(RTL_CHARS.search(str(text)))
+
+
+def priority_rows(notes: dict, L: dict) -> list:
+    rows = []
+    for p in notes.get("exam_priorities") or []:
+        lvl = str(p.get("priority", "medium")).lower()
+        dots = {"high": "●●●", "medium": "●●○", "low": "●○○"}.get(lvl, "")
+        rows.append([p.get("topic", ""), f"{dots} {L.get(lvl, lvl)}", p.get("focus") or p.get("why", "")])
+    return rows
 
 
 def plain(text: str) -> str:

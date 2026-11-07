@@ -78,6 +78,21 @@ and YouTube transcripts. Output has `=== Page N ===` / `=== Slide N ===` markers
 - Back matter is not optional: overview, learning objectives, key takeaways, common mistakes, exam
   tips, cheat sheet, glossary, review questions (mixed types and difficulty, each tagged with its
   `section`, with full answers), flashcards.
+- Say each thing once. A definition lives in its `definition` block; the body text builds on it
+  rather than restating it, and recaps (takeaways, cheat sheet) compress rather than repeat.
+- **Exam requests** ("midterm", "exam tomorrow", "what's likely to be asked"): add
+  `exam_priorities` — a ranked list of topics (high / medium / low) with what to know for each.
+  It opens the document and the deck. Give high-priority topics the most worked examples and
+  questions; compress niche material (long lists of variants, history, minor algorithms) into one
+  compact table instead of a section each. If the exam is very soon, prefer focus over volume.
+- **Curate the deck while you write** (it is a review tool, not the document re-flowed):
+  - give every section `slide_bullets` — 3–6 crisp review bullets in your own words: the gist a
+    student should recall on a quick flip-through;
+  - mark only the blocks that earn a slide with `"slide": true` — typically the 1–3 most important
+    definitions, the key comparison table, the canonical worked example, the core formula or code,
+    the essential diagram, and the top 1–3 mistakes/tips per section.
+  Aim for 3–6 slides per section and roughly 20–50 slides in total. Everything else stays in the
+  document and in the speaker notes.
 - For long sources write one file per chapter under `work/sections/` and list their paths in
   `sections` — smaller writes, easier fixes.
 
@@ -104,20 +119,20 @@ The document has a cover, overview/objectives, clickable contents, numbered sect
 glossary, questions grouped by type with a separate answer key, and flashcards. **Everything in
 the JSON goes into the document** — it is the complete reference.
 
-The deck is the *review* companion, so it is deliberately more compact. Per section it shows a
-divider, key-term cards (all the section's definitions together), the content (text flows across
-subsections onto shared slides; examples, formulas, code, tables, figures and diagrams get their
-own slides; small code listings are paired side by side), a "Remember" slide collecting the
-section's key points, common mistakes, exam tips and mnemonics, and a "Check yourself" quiz with
-the answers in the speaker notes. `note` and `intuition` callouts go to speaker notes. Text is
-auto-sized and auto-paginated (no overflow), every slide has speaker notes, and RTL languages are
-laid out right-to-left automatically.
+The deck is the *review* companion. Per section it shows a divider, key-term cards (the
+definitions you marked), the `slide_bullets` and marked content — short text and a small table
+or code listing share a slide side by side; bigger examples, formulas, tables, figures and
+diagrams get their own — then a "Remember" slide with the marked key points, mistakes and tips,
+and a "Check yourself" quiz with answers in the speaker notes. After the sections come exam
+priorities (up front), key takeaways, common mistakes, exam tips, the cheat sheet and a short
+final quiz; the glossary stays in the document. Text is auto-sized and paginated (no overflow),
+every slide carries speaker notes with the full explanation, and RTL languages are laid out
+right-to-left automatically.
 
-**Keep the deck reviewable — about 1.5–3 slides per source page, usually 30–90 slides.** The
-builder prints the slide count and warns above 90. To trim without losing anything from the doc:
-add `"slide": false` to secondary blocks (alternative code variants, reference tables a learner
-won't flip through, a second example of the same idea), give long paragraphs a `short` list of
-2–4 bullets, and merge small tables that compare the same things. Rebuild and check the count.
+The builder prints the slide count. If it is far above ~50, un-mark secondary blocks; if a
+section has no slide but its divider, mark something or add `slide_bullets`. (Without any
+`slide_bullets` / `"slide": true` markers the builder falls back to showing every block, which
+gives a long deck — always curate.)
 
 ## Step 5 — Look at the result
 
@@ -136,7 +151,8 @@ available, skip this step.
 Give the user the two files, plus a 2–4 line summary: what was covered (sections / page range),
 the counts (sections, practice questions, flashcards, glossary terms), and the defaults you chose.
 Mention any part of the source you couldn't use (e.g. unreadable scanned pages, a paywalled
-section). Don't paste the notes into the chat.
+section). Don't paste the notes into the chat, and don't point the user to your intermediate
+files (`source.txt`, `notes.json`) unless they asked for them.
 
 ## Requests that change the recipe
 

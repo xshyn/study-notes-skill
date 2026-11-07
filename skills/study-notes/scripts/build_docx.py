@@ -19,13 +19,13 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor, Emu
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, has_rtl, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -120,7 +120,7 @@ class Builder:
         r = hp.add_run(plain(self.meta.get("title", "")))
         r.font.size = Pt(8.5)
         r.font.color.rgb = self._rgb(self.T["muted"])
-        hp.alignment = WD_ALIGN_PARAGRAPH.LEFT if not self.rtl else WD_ALIGN_PARAGRAPH.RIGHT
+        hp.alignment = WD_ALIGN_PARAGRAPH.LEFT if not self.rtl else None  # RTL: start = right
         self._border(hp, "bottom", self.T["soft"], 6)
         fp = sec.footer.paragraphs[0]
         fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -198,10 +198,22 @@ class Builder:
     def _par_dir(self, p):
         if self.rtl:
             ppr = p._p.get_or_add_pPr()
-            if ppr.find(qn("w:bidi")) is None:
-                ppr.append(OxmlElement("w:bidi"))
-            if p.alignment is None:
-                p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            bidi = ppr.find(qn("w:bidi"))
+            if bidi is None:
+                bidi = OxmlElement("w:bidi")
+                ppr.append(bidi)
+            if p.text.strip() and not has_rtl(p.text):
+                # an all-Latin line (code identifiers, an English answer) reads correctly only as LTR;
+                # keep it right-aligned so the page still flows right-to-left
+                bidi.set(qn("w:val"), "0")
+                if p.alignment in (None, WD_ALIGN_PARAGRAPH.LEFT):
+                    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            else:
+                bidi.attrib.pop(qn("w:val"), None)
+                # in a right-to-left paragraph "left"/"right" are logical (start/end) in Word and
+                # LibreOffice; the default (start) is already the right-hand side
+                if p.alignment == WD_ALIGN_PARAGRAPH.RIGHT:
+                    p.alignment = None
 
     def runs(self, p, text, size=None, color=None, bold=None, italic=None):
         for t, fmt in inline_runs(text):
@@ -230,7 +242,7 @@ class Builder:
                 shd.set(qn("w:val"), "clear")
                 shd.set(qn("w:fill"), "FFF0B3")
                 rpr.append(shd)
-            if self.rtl:
+            if self.rtl and not fmt.get("code") and has_rtl(t):
                 r._r.get_or_add_rPr().append(OxmlElement("w:rtl"))
         return p
 
@@ -277,6 +289,9 @@ class Builder:
 
     def heading(self, text, level, anchor=None):
         p = self.doc.add_heading(level=level)
+        if getattr(self, "_pb", False):
+            p.paragraph_format.page_break_before = True
+            self._pb = False
         self.runs(p, text)
         self._par_dir(p)
         if level == 1:
@@ -286,7 +301,8 @@ class Builder:
         return p
 
     def page_break(self):
-        self.doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+        # applied to the next heading as "page break before" — never leaves a blank page behind
+        self._pb = True
 
     def box(self, fill, bar=None, width_in=None, border_color=None):
         """A one-cell table used as a callout container. Returns the cell."""
@@ -333,6 +349,25 @@ class Builder:
 
     # ------------------------------------------------------------------ blocks
     def bullets(self, items, numbered=False, level=0, container=None):
+        if numbered:
+            for i, it in enumerate(items, 1):
+                c = container if container is not None else self.doc
+                p = c.add_paragraph()
+                pf = p.paragraph_format
+                pf.space_after = Pt(3)
+                ind = Inches(0.3 + 0.3 * level)
+                if self.rtl:
+                    pf.right_indent = ind
+                else:
+                    pf.left_indent = ind
+                pf.first_line_indent = Inches(-0.25)
+                self.runs(p, f"**{i}.** ")
+                self.runs(p, item_text(it))
+                self._par_dir(p)
+                kids = item_children(it)
+                if kids:
+                    self.bullets(kids, numbered=False, level=level + 1, container=container)
+            return
         base = "List Number" if numbered else "List Bullet"
         style = base if level == 0 else f"{base} {min(level + 1, 3 if not numbered else 2)}"
         for it in items:
@@ -527,7 +562,8 @@ class Builder:
         headers = b.get("headers") or []
         rows = b.get("rows") or []
         if b.get("caption") or b.get("title"):
-            self.para(b.get("caption") or b.get("title"), bold=True, size=10, color=self.T["primary"])
+            self.para(b.get("caption") or b.get("title"), bold=True, size=10,
+                      color=self.T["primary"]).paragraph_format.keep_with_next = True
         ncols = max([len(headers)] + [len(r) for r in rows] + [1])
         t = self.doc.add_table(rows=0, cols=ncols)
         t.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -544,7 +580,9 @@ class Builder:
             th = OxmlElement("w:tblHeader")
             tr_pr.append(th)
         for ri, row in enumerate(rows):
-            cells = t.add_row().cells
+            new_row = t.add_row()
+            new_row._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
+            cells = new_row.cells
             for i in range(ncols):
                 v = row[i] if i < len(row) else ""
                 fill = self.T["soft"] if ri % 2 else "FFFFFF"
@@ -638,6 +676,10 @@ class Builder:
             self.heading(self.L["overview"], 1, "sec_overview")
             for para in (n["overview"] if isinstance(n["overview"], list) else [n["overview"]]):
                 self.para(para)
+        if n.get("exam_priorities"):
+            self.heading(self.L["priorities"], 2)
+            self.b_table({"headers": [self.L["topic"], self.L["priority"], self.L["focus"]],
+                          "rows": priority_rows(n, self.L), "first_col_bold": True})
         if n.get("learning_objectives"):
             self.heading(self.L["objectives"], 2)
             self.para("After studying these notes you should be able to:" if self.meta["language"] == "en" else "",
@@ -791,14 +833,11 @@ class Builder:
         groups: dict[str, list] = {}
         for i, q in indexed:
             groups.setdefault(q.get("type", "conceptual"), []).append((i, q))
-        names = {"recall": "Recall", "true_false": "True / false", "mcq": "Multiple choice",
-                 "conceptual": "Conceptual understanding", "application": "Application",
-                 "problem": "Problems", "compare": "Compare & contrast", "analysis": "Analysis"}
         numbering = {}
         k = 0
         for gtype in sorted(groups, key=lambda g: order.get(g, 9)):
             items = sorted(groups[gtype], key=lambda x: diff.get(x[1].get("difficulty", "medium"), 1))
-            self.heading(names.get(gtype, gtype.title()) if self.meta["language"] == "en" else gtype, 3)
+            self.heading(L.get(f"q_{gtype}", gtype.replace("_", " ").title()), 3)
             for _, q in items:
                 k += 1
                 numbering[id(q)] = k
@@ -809,6 +848,7 @@ class Builder:
                 if q.get("difficulty"):
                     dot = {"easy": "●○○", "medium": "●●○", "hard": "●●●"}.get(q["difficulty"], "")
                     self.runs(p, f"  {dot}", size=8, color=self.T["accent"])
+                self._par_dir(p)
                 if qcode:
                     self._code_into(self.doc, qcode)
                 if q.get("code"):
@@ -828,6 +868,7 @@ class Builder:
                 self.runs(p, f"Q{k}. ", bold=True, color=self.T["primary"])
                 atext, acode = self._split_code(q.get("answer", ""))
                 self.runs(p, atext)
+                self._par_dir(p)
                 if acode:
                     self._code_into(self.doc, acode)
                 if q.get("answer_code"):
@@ -836,7 +877,7 @@ class Builder:
                     self.para(q["explanation"], size=9.5, color=self.T["muted"]).paragraph_format.left_indent = \
                         Inches(0.3)
                 if q.get("section"):
-                    self.para(f"→ §{q['section']}", size=8.5, color=self.T["muted"], italic=True)
+                    self.para(f"{L['see']}{q['section']}", size=8.5, color=self.T["muted"], italic=True)
 
     def build(self, out: Path):
         self.cover()

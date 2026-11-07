@@ -165,6 +165,17 @@ def main():
     for key in ("learning_objectives", "key_takeaways", "common_mistakes", "exam_tips", "cheat_sheet", "overview"):
         if not n.get(key):
             warns.append(f"'{key}' is empty")
+    allsecs = [sec for _, _, sec in secs]
+    marked = sum(1 for sec in allsecs for b in sec.get("blocks", []) if b.get("slide") is True)
+    if not marked and not any(sec.get("slide_bullets") for sec in allsecs):
+        warns.append("deck is not curated: no section has 'slide_bullets' and no block has \"slide\": true "
+                     "— the deck will show every block and be long")
+    else:
+        nob = [num for num, d, sec in secs if d == 1 and not sec.get("slide_bullets")]
+        if nob:
+            warns.append(f"top-level sections without slide_bullets: {', '.join(nob)}")
+        if marked > 12 * max(1, len(top_secs)):
+            warns.append(f"{marked} blocks marked for slides — likely a long deck; keep only what earns a slide")
     if counts["example"] == 0:
         warns.append("no worked examples — learners need at least one per major concept")
     if counts["definition"] == 0:
