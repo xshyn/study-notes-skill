@@ -106,12 +106,6 @@ The JSON format is documented in
 
 ---
 
-## Benchmark
-
-BENCHMARK_PLACEHOLDER
-
----
-
 ## Repository layout
 
 ```
