@@ -85,14 +85,16 @@ and YouTube transcripts. Output has `=== Page N ===` / `=== Slide N ===` markers
   It opens the document and the deck. Give high-priority topics the most worked examples and
   questions; compress niche material (long lists of variants, history, minor algorithms) into one
   compact table instead of a section each. If the exam is very soon, prefer focus over volume.
-- **Curate the deck while you write** (it is a review tool, not the document re-flowed):
-  - give every section `slide_bullets` — 3–6 crisp review bullets in your own words: the gist a
+- **Curate the deck while you write** — it is a review tool a student flips through, not the
+  document re-flowed. Budget about **2–4 content slides per section and 20–35 slides in total**
+  (up to ~45 for sources over 40 pages):
+  - give every section `slide_bullets` — 3–6 crisp review bullets in your own words: what a
     student should recall on a quick flip-through;
-  - mark only the blocks that earn a slide with `"slide": true` — typically the 1–3 most important
-    definitions, the key comparison table, the canonical worked example, the core formula or code,
-    the essential diagram, and the top 1–3 mistakes/tips per section.
-  Aim for 3–6 slides per section and roughly 20–50 slides in total. Everything else stays in the
-  document and in the speaker notes.
+  - mark with `"slide": true` only what earns a slide — the 1–2 key definitions, the one
+    comparison table, the canonical worked example, the core formula or code, and the top
+    mistake/tip. Prefer one strong visual per section (a `diagram`, a `chart` of how a quantity
+    evolves, a table) over several text slides;
+  - everything unmarked stays in the document and in the speaker notes, so nothing is lost.
 - For long sources write one file per chapter under `work/sections/` and list their paths in
   `sections` — smaller writes, easier fixes.
 
@@ -129,10 +131,10 @@ final quiz; the glossary stays in the document. Text is auto-sized and paginated
 every slide carries speaker notes with the full explanation, and RTL languages are laid out
 right-to-left automatically.
 
-The builder prints the slide count. If it is far above ~50, un-mark secondary blocks; if a
-section has no slide but its divider, mark something or add `slide_bullets`. (Without any
-`slide_bullets` / `"slide": true` markers the builder falls back to showing every block, which
-gives a long deck — always curate.)
+The builder prints the slide count and warns above 40. **Treat the budget as a hard target:** if
+the deck is over it, un-mark secondary blocks and rebuild until it fits. If a section has
+nothing but its divider, mark something or add `slide_bullets`. (Without any `slide_bullets` /
+`"slide": true` markers the builder shows every block — a long deck — so always curate.)
 
 ## Step 5 — Look at the result
 

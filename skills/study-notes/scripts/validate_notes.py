@@ -26,7 +26,7 @@ from notes_common import item_text, load_notes, plain, walk_sections  # noqa: E4
 KNOWN = {"text", "paragraph", "bullets", "list", "numbered", "steps", "numbered_list", "definition", "key_point",
          "warning", "tip", "mnemonic", "note", "intuition", "pitfall", "mistake", "exam_tip", "important", "callout",
          "example", "formula", "math", "equation", "code", "table", "quote", "image", "figure", "diagram",
-         "diagram_mermaid"}
+         "diagram_mermaid", "chart", "graph", "plot"}
 
 TARGETS = {  # minimums per depth profile
     "summary":  {"blocks_per_section": 3, "questions_min": 6,  "q_per_section": 1, "glossary_min": 5,  "flash_min": 0},
@@ -122,6 +122,8 @@ def main():
                 hdr = len(b.get("headers") or [])
                 if hdr and any(len(r) != hdr for r in rows):
                     warns.append(f"{where}: some rows don't match header width ({hdr})")
+            if t in ("chart", "graph", "plot") and not any(x.get("values") for x in b.get("series", [])):
+                errors.append(f"{where}: chart needs series with values")
             if t == "code" and not b.get("code"):
                 errors.append(f"{where}: code block is empty")
             if t in ("formula", "math", "equation") and not (b.get("latex") or b.get("text") or b.get("formula")):

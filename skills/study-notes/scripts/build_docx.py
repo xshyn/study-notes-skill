@@ -25,7 +25,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor, Emu
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, strip_step_number, has_rtl, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, render_chart, strip_step_number, has_rtl, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -388,7 +388,7 @@ class Builder:
             alias = {"paragraph": "text", "list": "bullets", "steps": "numbered", "numbered_list": "numbered",
                      "callout": "key_point", "important": "key_point", "pitfall": "warning",
                      "mistake": "warning", "exam_tip": "tip", "diagram_mermaid": "diagram",
-                     "figure": "image", "math": "formula", "equation": "formula"}.get(t)
+                     "figure": "image", "math": "formula", "equation": "formula", "graph": "chart", "plot": "chart"}.get(t)
             fn = getattr(self, f"b_{alias}", None) if alias else None
         if fn is None:
             fn = self.b_text
@@ -615,6 +615,14 @@ class Builder:
             self.picture(p, min(b.get("width_in", 5.5), CONTENT_W_IN), b.get("caption"))
         elif b.get("caption"):
             self.para(f"[Figure: {b['caption']}]", italic=True, color=self.T["muted"])
+
+    def b_chart(self, b):
+        self._img += 1
+        png = self.tmp / f"c{self._img}.png"
+        if render_chart(b, png, self.T, rtl=self.rtl):
+            self.picture(png, min(b.get("width_in", 6.0), CONTENT_W_IN), b.get("caption"))
+        elif b.get("caption"):
+            self.para(f"[Chart: {b['caption']}]", italic=True, color=self.T["muted"])
 
     def b_diagram(self, b):
         self._img += 1

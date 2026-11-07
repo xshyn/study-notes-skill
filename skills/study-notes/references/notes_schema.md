@@ -165,6 +165,18 @@ DOCX and PPTX for reuse.
 Rendered with mermaid-cli (`mmdc`) when installed; otherwise the `ascii` fallback (or the Mermaid
 source) is shown as a code block. Use for processes, hierarchies, state machines, timelines.
 
+### chart
+```json
+{"type": "chart", "kind": "step", "title": "cwnd under TCP Reno", "x": [1, 2, 3, 4, 5, 6],
+ "series": [{"name": "cwnd", "values": [1, 2, 4, 8, 4, 5]}], "xlabel": "RTT", "ylabel": "MSS",
+ "hlines": [{"y": 8, "label": "ssthresh"}], "annotations": [{"x": 5, "y": 4, "text": "3 dup ACKs"}],
+ "caption": "Slow start, then fast recovery", "explanation": "speaker-note text"}
+```
+`kind`: `line`, `step`, `bar` or `scatter`; several `series` share the axes. Rendered with
+matplotlib in both files. Use charts whenever the source describes how a quantity changes
+(growth curves, traces, complexity, comparisons of numbers) — they are the fastest thing to
+review.
+
 ### quote
 ```json
 {"type": "quote", "text": "…", "by": "Author"}

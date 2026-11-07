@@ -29,7 +29,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, strip_step_number, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, render_chart, strip_step_number, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -668,7 +668,7 @@ class Deck:
         t = (t or "text").lower()
         return {"paragraph": "text", "list": "bullets", "steps": "numbered", "numbered_list": "numbered",
                 "figure": "image", "math": "formula", "equation": "formula", "diagram_mermaid": "diagram",
-                "pitfall": "warning", "mistake": "warning", "exam_tip": "tip", "important": "key_point",
+                "graph": "chart", "plot": "chart", "pitfall": "warning", "mistake": "warning", "exam_tip": "tip", "important": "key_point",
                 "callout": "key_point"}.get(t, t)
 
     def top_section(self, num, sec, quiz_pool):
@@ -749,11 +749,12 @@ class Deck:
         lx = W - MARGIN - lw if self.rtl else MARGIN
         rx = MARGIN if self.rtl else MARGIN + lw + 0.4
         h = BODY_BOTTOM - BODY_TOP - 0.45
-        for x, w, label, paras, fill in ((lx, lw, self.L.get("remember", "Remember"), rparas, "FFF6E0"),
-                                         (rx, rw, self.L["check"], qparas, self.T["soft"])):
-            self.rect(s, x, BODY_TOP, w, BODY_BOTTOM - BODY_TOP, fill, shape=MSO_SHAPE.ROUNDED_RECTANGLE,
-                      radius=0.04)
-            size, _ = self.fit_size(paras, w - 0.5, h - 0.2, 17, 11)
+        fits = [self.fit_size(rparas, lw - 0.5, h - 0.2, 17, 11)[0], self.fit_size(qparas, rw - 0.5, h - 0.2, 17, 11)[0]]
+        need = max(self.est_height(rparas, lw - 0.5, fits[0]), self.est_height(qparas, rw - 0.5, fits[1]))
+        box_h = min(BODY_BOTTOM - BODY_TOP, max(2.4, need + 0.95))
+        for (x, w, label, paras, fill), size in zip(((lx, lw, self.L.get("remember", "Remember"), rparas, "FFF6E0"),
+                                                     (rx, rw, self.L["check"], qparas, self.T["soft"])), fits):
+            self.rect(s, x, BODY_TOP, w, box_h, fill, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
             self.textbox(s, x + 0.25, BODY_TOP + 0.15, w - 0.5, 0.4, [label.upper() if not self.rtl else label],
                          12, color=self.T["primary"], bold=True)
             self.textbox(s, x + 0.25, BODY_TOP + 0.6, w - 0.5, h - 0.2, paras, size)
@@ -889,6 +890,13 @@ class Deck:
                 p = p if p.is_absolute() else (self.base_dir / p)
                 if p.exists():
                     self.image_slide(p, b.get("title") or title, b.get("caption"), kicker)
+                done_visual()
+            elif t == "chart":
+                lead_or_flush()
+                png = self.tmp / f"c{self.k}_{i}.png"
+                if render_chart(b, png, self.T, width_in=11, height_in=5.0, rtl=self.rtl):
+                    self.image_slide(png, b.get("slide_title") or title, b.get("caption"), kicker,
+                                     notes=b.get("explanation"))
                 done_visual()
             elif t == "diagram":
                 lead_or_flush()
@@ -1097,7 +1105,8 @@ class Deck:
             remaining.sort(key=lambda q: ({"easy": 0, "medium": 1, "hard": 2}.get(q.get("difficulty"), 1)))
             pick = remaining[::max(1, len(remaining) // cap)][:cap]
             for i in range(0, len(pick), 6):
-                self.quiz_slides(pick[i:i + 6], L["questions"])
+                self.quiz_slides(pick[i:i + 6], L["questions"],
+                                 answer_slide=bool(self.meta.get("deck_final_answer_slide", False)))
         # every slide gets speaker notes: fall back to the slide's own text
         for sl in self.prs.slides:
             tf = sl.notes_slide.notes_text_frame
@@ -1118,10 +1127,9 @@ def main():
     notes = load_notes(a.notes)
     out, n = Deck(notes, Path(a.notes).resolve().parent).build(Path(a.output))
     print(f"[build_pptx] wrote {out} ({n} slides)")
-    if n > 90:
-        print("[build_pptx] NOTE: the deck is long for review. Consider marking secondary blocks with "
-              '"slide": false, giving long paragraphs a short "short" bullet list, or merging small tables.')
-
+    if n > 40:
+        print(f"[build_pptx] WARNING: {n} slides — over the review-deck budget (20–35, ~45 for very long "
+              "sources). Un-mark secondary blocks (\"slide\": true) or shorten slide_bullets, then rebuild.")
 
 if __name__ == "__main__":
     main()

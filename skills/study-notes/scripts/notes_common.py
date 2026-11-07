@@ -120,28 +120,55 @@ def theme(meta: dict) -> dict:
     return t
 
 
-# italics only when the asterisks hug word characters (*word*, *two words*), so regex such as
-# `.*?` or `<[^>]*>` written in prose is never mangled; bold likewise needs a word inside
-INLINE_RE = re.compile(r"(\*\*(?=[^\s*]).+?(?<=[^\s*])\*\*|`[^`]+`|"
-                       r"(?<![\w*\\])\*(?=[^\W_])[^*\n]+?(?<=[^\W_])\*(?![\w*])|==.+?==)")
+# Light inline markdown. Code spans are taken first (verbatim), then bold / highlight / italic in
+# the remaining text — so `code` may sit inside **bold**. Italic needs the asterisks to hug
+# non-space characters and to start on a letter, so regex like `.*?` or `<[^>]*>` written in
+# prose is never mangled, while *e.g.* still works.
+CODE_RE = re.compile(r"`([^`]+)`")
+EMPH_RE = re.compile(r"(\*\*(?=\S)(?P<b>.+?)(?<=\S)\*\*"
+                     r"|==(?P<h>.+?)=="
+                     r"|(?<![\w*\\])\*(?=[^\W\d_])(?P<i>[^*\n]*?\S)\*(?![\w*]))")
+
+
+def _emph(text: str, base: dict) -> list:
+    out, pos = [], 0
+    for m in EMPH_RE.finditer(text):
+        if m.start() > pos:
+            out.append((text[pos:m.start()], dict(base)))
+        if m.group("b") is not None:
+            out.extend(_emph(m.group("b"), {**base, "bold": True}))
+        elif m.group("h") is not None:
+            out.extend(_emph(m.group("h"), {**base, "bold": True, "highlight": True}))
+        else:
+            out.append((m.group("i"), {**base, "italic": True}))
+        pos = m.end()
+    if pos < len(text):
+        out.append((text[pos:], dict(base)))
+    return out
 
 
 def inline_runs(text: str) -> list[tuple[str, dict]]:
-    """Split light markdown (**bold**, *italic*, `code`, ==highlight==) into (text, fmt) runs."""
+    """Split light markdown (**bold**, *italic*, `code`, ==highlight==) into (text, fmt) runs.
+    Bold may contain code spans; a code span is always rendered verbatim."""
+    text = str(text)
+    # protect code spans, then parse emphasis around them (code inherits surrounding bold)
+    spans, pieces, pos = [], [], 0
+    for m in CODE_RE.finditer(text):
+        pieces.append(text[pos:m.start()])
+        spans.append(m.group(1))
+        pieces.append(f"\x00{len(spans) - 1}\x00")
+        pos = m.end()
+    pieces.append(text[pos:])
     out: list[tuple[str, dict]] = []
-    for part in INLINE_RE.split(str(text)):
-        if not part:
-            continue
-        if part.startswith("**") and part.endswith("**") and len(part) > 4:
-            out.append((part[2:-2], {"bold": True}))
-        elif part.startswith("==") and part.endswith("==") and len(part) > 4:
-            out.append((part[2:-2], {"bold": True, "highlight": True}))
-        elif part.startswith("`") and part.endswith("`") and len(part) > 2:
-            out.append((part[1:-1], {"code": True}))
-        elif part.startswith("*") and part.endswith("*") and len(part) > 2:
-            out.append((part[1:-1], {"italic": True}))
-        else:
-            out.append((part, {}))
+    for seg, fmt in _emph("".join(pieces), {}):
+        for part in re.split(r"(\x00\d+\x00)", seg):
+            if not part:
+                continue
+            mm = re.fullmatch(r"\x00(\d+)\x00", part)
+            if mm:
+                out.append((spans[int(mm.group(1))], {**fmt, "code": True}))
+            else:
+                out.append((part, fmt))
     return out
 
 
@@ -247,6 +274,67 @@ def render_latex(expr: str, out_png: Path, fontsize: int = 22, color: str = "1F2
         fig = plt.figure(figsize=(0.01, 0.01))
         fig.text(0, 0, expr, fontsize=fontsize, color="#" + color)
         fig.savefig(str(out_png), dpi=220, bbox_inches="tight", pad_inches=0.06, transparent=True)
+        plt.close(fig)
+        return True
+    except Exception:
+        plt.close("all")
+        return False
+
+
+def render_chart(b: dict, out_png: Path, T: dict, width_in: float = 9.0, height_in: float = 4.6,
+                 rtl: bool = False) -> bool:
+    """Render a simple data chart (line / step / bar / scatter) to PNG with matplotlib.
+    b: {"kind", "title", "x": [...], "series": [{"name", "values"}], "xlabel", "ylabel",
+        "annotations": [{"x", "y", "text"}], "hlines": [{"y", "label"}]}"""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return False
+    palette = ["#" + T["primary"], "#" + T["accent"], "#2E86DE", "#27AE60", "#C0392B", "#8E44AD"]
+    kind = (b.get("kind") or "line").lower()
+    x = b.get("x") or list(range(1, 1 + max((len(s_.get("values", [])) for s_ in b.get("series", [])), default=0)))
+    try:
+        fig, ax = plt.subplots(figsize=(width_in, height_in), dpi=200)
+        n = len(b.get("series", []))
+        for i, s_ in enumerate(b.get("series", [])):
+            ys = s_.get("values", [])
+            xs = s_.get("x", x)[:len(ys)]
+            c = s_.get("color") and "#" + s_["color"].lstrip("#") or palette[i % len(palette)]
+            if kind == "bar":
+                w = 0.8 / max(n, 1)
+                pos = [j + (i - (n - 1) / 2) * w for j in range(len(ys))]
+                ax.bar(pos, ys, width=w, color=c, label=s_.get("name"))
+                ax.set_xticks(range(len(ys)))
+                ax.set_xticklabels([str(v) for v in xs])
+            elif kind == "step":
+                ax.step(xs, ys, where="post", color=c, linewidth=2.2, label=s_.get("name"))
+                ax.plot(xs, ys, "o", color=c, markersize=4)
+            elif kind == "scatter":
+                ax.scatter(xs, ys, color=c, label=s_.get("name"), s=28)
+            else:
+                ax.plot(xs, ys, "-o", color=c, linewidth=2.2, markersize=4, label=s_.get("name"))
+        for h in b.get("hlines", []) or []:
+            ax.axhline(h.get("y", 0), color="#" + T["muted"], linestyle="--", linewidth=1.2)
+            if h.get("label"):
+                ax.annotate(h["label"], xy=(0.01, h.get("y", 0)), xycoords=("axes fraction", "data"),
+                            xytext=(0, 4), textcoords="offset points", fontsize=9, color="#" + T["muted"])
+        for a in b.get("annotations", []) or []:
+            ax.annotate(a.get("text", ""), xy=(a.get("x"), a.get("y")), xytext=(8, 14), textcoords="offset points",
+                        fontsize=9, color="#" + T["ink"],
+                        arrowprops=dict(arrowstyle="->", color="#" + T["muted"], lw=0.9))
+        ax.set_xlabel(b.get("xlabel", ""), fontsize=10)
+        ax.set_ylabel(b.get("ylabel", ""), fontsize=10)
+        if b.get("title"):
+            ax.set_title(b["title"], fontsize=12, color="#" + T["primary"], loc="right" if rtl else "left")
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        ax.grid(axis="y", alpha=0.25)
+        if n > 1 or any(s_.get("name") for s_ in b.get("series", [])):
+            ax.legend(frameon=False, fontsize=9)
+        fig.tight_layout()
+        fig.savefig(str(out_png), dpi=200)
         plt.close(fig)
         return True
     except Exception:
