@@ -282,6 +282,31 @@ class Deck:
             self.chrome(s, title, kicker, continued=i > 0)
             self.textbox(s, MARGIN, self.bt, width, height, chunk, size)
 
+    def two_column_slide(self, title, left, right, notes=None, kicker=None, fills=None):
+        """left/right: (label, paras). Returns False (and draws nothing) if they don't fit legibly."""
+        lw = rw = (W - 2 * MARGIN - 0.4) / 2
+        h = BODY_BOTTOM - BODY_TOP - 0.6
+        sizes = []
+        for (_, paras), w in ((left, lw), (right, rw)):
+            size, ok = self.fit_size(paras, w - 0.5, h - 0.1, 18, 13)
+            if not ok:
+                return False
+            sizes.append(size)
+        s = self.new_slide(notes)
+        self.chrome(s, title, kicker)
+        need = max(self.est_height(left[1], lw - 0.5, sizes[0]), self.est_height(right[1], rw - 0.5, sizes[1]))
+        box_h = min(BODY_BOTTOM - BODY_TOP, max(2.4, need + 0.9))
+        fills = fills or (self.T["soft"], "FFF6E0")
+        for ci, ((label, paras), size) in enumerate(zip((left, right), sizes)):
+            x = MARGIN + ci * (lw + 0.4)
+            if self.rtl:
+                x = W - MARGIN - lw - ci * (lw + 0.4)
+            self.rect(s, x, BODY_TOP, lw, box_h, fills[ci], shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.04)
+            self.textbox(s, x + 0.25, BODY_TOP + 0.15, lw - 0.5, 0.4, [label.upper() if not self.rtl else label],
+                         12, color=self.T["primary"], bold=True)
+            self.textbox(s, x + 0.25, BODY_TOP + 0.6, lw - 0.5, h, paras, size)
+        return True
+
     def objectives_slide(self):
         if self.n.get("learning_objectives"):
             self.bullet_slide(self.L["objectives"], self.n["learning_objectives"], numbered=True,
@@ -680,11 +705,14 @@ class Deck:
                                      for n, d, s in walk_sections(sec.get("subsections", []))]
         defs = [b for _, _, s in subtree for b in s.get("blocks", [])
                 if self._norm(b.get("type")) == "definition" and self._on_deck(b)]
-        if defs:
-            self.definition_slide(self.L.get("key_terms", "Key terms"),
-                                  defs, f"§{num}")
-        remember = []
         self._flow = {"text": [], "notes": [], "code": [], "title": None, "kicker": None}
+        if len(defs) >= 3:
+            self.definition_slide(self.L.get("key_terms", "Key terms"), defs, f"§{num}")
+        elif defs:  # one or two terms read better as the opening lines of the section's first slide
+            for d in defs:
+                self._flow["text"].append((f"**{d.get('term', '')}** — {d.get('definition', d.get('text', ''))}",
+                                           0, {"bullet": "▸", "bullet_color": self.T["primary"]}))
+        remember = []
         for snum, depth, s in subtree:
             self.content_flow(snum, depth, s, remember)
             if not self.curated:
@@ -766,6 +794,11 @@ class Deck:
         kicker = f"§{num} · {plain(self.root_title)}" if depth > 1 else f"§{num}"
         blocks = [b for b in sec.get("blocks", []) if self._on_deck(b)]
         F = self._flow
+        if self.curated and depth > 1 and not blocks and not sec.get("slide_bullets"):
+            # nothing picked for the deck: keep its explanation in the speaker notes, no slide
+            F["notes"].extend(plain(b.get("text", "")) for b in sec.get("blocks", [])
+                              if self._norm(b.get("type")) == "text")
+            return
         pending_text, pending_notes, pending_code = F["text"], F["notes"], F["code"]
         if F["title"] is None or not pending_text:
             F["title"], F["kicker"] = title, kicker
@@ -1055,13 +1088,18 @@ class Deck:
         self.curated = any(s.get("slide_bullets") for s in allsec) or \
             any(b.get("slide") is True for s in allsec for b in s.get("blocks", []))
         self.title_slide()
-        if n.get("overview"):
-            ov = n["overview"] if isinstance(n["overview"], list) else [n["overview"]]
-            paras = []
-            for o in ov:
-                paras += [(x, 0, {"bullet": "•"}) for x in sentences(o)]
-            self.bullet_slide_raw(L["overview"], paras, notes=" ".join(ov))
-        self.objectives_slide()
+        ov = n.get("overview") or []
+        ov = ov if isinstance(ov, list) else [ov]
+        ov_paras = [(x, 0, {"bullet": "•"}) for o in ov for x in sentences(o)]
+        obj = [(item_text(o), 0, {"bullet": "num"}) for o in n.get("learning_objectives", [])]
+        pre = [(item_text(o), 0, {"bullet": "•"}) for o in n.get("prerequisites", [])]
+        left = ov_paras + ([(L["prereq"], 0, {"bold": True, "color": self.T["primary"]})] + pre if pre else [])
+        merged = bool(ov_paras and obj) and self.two_column_slide(
+            L["overview"], (L["overview"], left), (L["objectives"], obj), notes=" ".join(ov))
+        if not merged:
+            if ov_paras:
+                self.bullet_slide_raw(L["overview"], ov_paras, notes=" ".join(ov))
+            self.objectives_slide()
         if n.get("exam_priorities"):
             self.table_slide({"headers": [L["topic"], L["priority"], L["focus"]], "rows": priority_rows(n, L)},
                              None, L["priorities"])
@@ -1078,19 +1116,24 @@ class Deck:
             self.top_section(str(i), sec, pool)
         if n.get("key_takeaways"):
             self.bullet_slide(L["takeaways"], n["key_takeaways"], numbered=True)
-        if n.get("common_mistakes"):
-            items = []
-            for m in n["common_mistakes"]:
-                if isinstance(m, dict):
-                    items.append({"text": f"✗ {m.get('mistake', m.get('text', ''))}",
-                                  "children": [f"✓ {m.get('correction') or m.get('fix') or ''}"]
-                                  if (m.get('correction') or m.get('fix')) else []})
-                else:
-                    items.append(m)
-            self.bullet_slide(L["mistakes"], items)
-        if n.get("exam_tips"):
-            self.callout_slide(L["exam_tips"], [{"type": "tip", "items": n["exam_tips"], "title": L["exam_tips"]}],
-                               None)
+        mist = []
+        for m in n.get("common_mistakes", []):
+            if isinstance(m, dict):
+                mist.append((f"✗ {m.get('mistake', m.get('text', ''))}", 0, {}))
+                if m.get("correction") or m.get("fix"):
+                    mist.append((f"✓ {m.get('correction') or m.get('fix')}", 1, {"color": "1E7D45"}))
+            else:
+                mist.append((f"✗ {item_text(m)}", 0, {}))
+        tips = [(item_text(t), 0, {"bullet": "•", "bullet_color": "27AE60"}) for t in n.get("exam_tips", [])]
+        both = bool(mist and tips) and self.two_column_slide(
+            L.get("before_exam", "Before the exam"), (L["mistakes"], mist), (L["exam_tips"], tips),
+            fills=("FDECEC", "E8F6EE"))
+        if not both:
+            if mist:
+                self.bullet_slide_raw(L["mistakes"], mist)
+            if tips:
+                self.callout_slide(L["exam_tips"], [{"type": "tip", "items": n["exam_tips"],
+                                                     "title": L["exam_tips"]}], None)
         if n.get("cheat_sheet"):
             self.cheat_slides(n["cheat_sheet"])
         if n.get("glossary") and self.meta.get("deck_glossary", False):

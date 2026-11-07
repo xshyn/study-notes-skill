@@ -221,12 +221,14 @@ class Builder:
             if fmt.get("code"):
                 self._set_fonts(r, self.code_font, self.code_font)
                 r.font.size = Pt((size or 11) - 1)
-                r.font.color.rgb = self._rgb("A61B4A")
-                rpr = r._r.get_or_add_rPr()
-                shd = OxmlElement("w:shd")
-                shd.set(qn("w:val"), "clear")
-                shd.set(qn("w:fill"), "F3F3F6")
-                rpr.append(shd)
+                on_dark = (color or "").upper() == "FFFFFF"
+                r.font.color.rgb = self._rgb("FFD58A" if on_dark else "A61B4A")
+                if not on_dark:
+                    rpr = r._r.get_or_add_rPr()
+                    shd = OxmlElement("w:shd")
+                    shd.set(qn("w:val"), "clear")
+                    shd.set(qn("w:fill"), "F3F3F6")
+                    rpr.append(shd)
             else:
                 if size:
                     r.font.size = Pt(size)
