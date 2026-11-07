@@ -120,7 +120,10 @@ def theme(meta: dict) -> dict:
     return t
 
 
-INLINE_RE = re.compile(r"(\*\*.+?\*\*|`[^`]+`|(?<![\w*])\*(?!\s)[^*]+?\*(?![\w*])|==.+?==)")
+# italics only when the asterisks hug word characters (*word*, *two words*), so regex such as
+# `.*?` or `<[^>]*>` written in prose is never mangled; bold likewise needs a word inside
+INLINE_RE = re.compile(r"(\*\*(?=[^\s*]).+?(?<=[^\s*])\*\*|`[^`]+`|"
+                       r"(?<![\w*\\])\*(?=[^\W_])[^*\n]+?(?<=[^\W_])\*(?![\w*])|==.+?==)")
 
 
 def inline_runs(text: str) -> list[tuple[str, dict]]:
@@ -165,6 +168,14 @@ def priority_rows(notes: dict, L: dict) -> list:
 
 def plain(text: str) -> str:
     return "".join(t for t, _ in inline_runs(text))
+
+
+STEP_NUM = re.compile(r"^\s*(?:step\s*)?\d{1,2}[\.\):]\s+", re.I)
+
+
+def strip_step_number(text: str) -> str:
+    """Builders number steps themselves; drop a leading '1.' / 'Step 2:' the author may have typed."""
+    return STEP_NUM.sub("", str(text), count=1)
 
 
 def item_text(item) -> str:

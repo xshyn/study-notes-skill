@@ -49,7 +49,11 @@ def all_text(notes: dict) -> str:
 
 def terms_from_source(src: str, top: int) -> list[str]:
     heads = [re.sub(r"^#+\s*", "", ln).strip() for ln in src.splitlines() if re.match(r"^#{1,4}\s+\S", ln)]
-    words = re.findall(r"[A-Za-z][A-Za-z\-]{3,}", src)
+    # key terms come from prose only: skip code-looking lines (prompts, calls, assignments, symbols)
+    prose = "\n".join(ln for ln in src.splitlines()
+                      if not re.match(r"^\s*(>>>|\.\.\.|\$|#!|def |class |import |from )", ln)
+                      and len(re.findall(r"[(){}\[\]=<>;\\|^$*+?]", ln)) <= max(2, len(ln) // 25))
+    words = re.findall(r"[A-Za-z][A-Za-z\-]{3,}", prose)
     low = [w.lower() for w in words if w.lower() not in STOP]
     uni = Counter(low)
     bi = Counter(f"{a} {b}" for a, b in zip(low, low[1:]) if a != b)

@@ -29,7 +29,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, strip_step_number, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -113,7 +113,8 @@ class Deck:
             p.alignment = align
 
     def _runs(self, p, text, size, color, bold=False, italic=False, font=None):
-        for t, fmt in inline_runs(text):
+        parts = [(str(text), {})] if font == self.code_font else inline_runs(text)  # code: verbatim
+        for t, fmt in parts:
             r = p.add_run()
             r.text = t
             f = r.font
@@ -400,7 +401,7 @@ class Deck:
 
     def example_slide(self, b, kicker):
         title = f"{self.L['example']}: {plain(b['title'])}" if b.get("title") else self.L["example"]
-        steps = [item_text(x) for x in b.get("steps", [])]
+        steps = [strip_step_number(item_text(x)) for x in b.get("steps", [])]
         notes = " ".join(filter(None, [plain(b.get("problem", "")), plain(b.get("text", "")),
                                       " ".join(plain(x) for x in steps), plain(b.get("solution", "")),
                                       plain(b.get("answer", ""))]))

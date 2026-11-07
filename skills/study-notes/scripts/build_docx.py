@@ -25,7 +25,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor, Emu
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from notes_common import (CALLOUTS, clean_option, has_rtl, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
+from notes_common import (CALLOUTS, clean_option, strip_step_number, has_rtl, priority_rows, image_size, inline_runs, item_children, item_text,  # noqa: E402
                           labels, load_notes, plain, render_latex, render_mermaid, theme,
                           walk_sections)
 
@@ -473,7 +473,7 @@ class Builder:
                 p.paragraph_format.space_after = Pt(2)
                 p.paragraph_format.left_indent = Inches(0.15)
                 self.runs(p, f"**{i}.** ")
-                self.runs(p, item_text(s))
+                self.runs(p, strip_step_number(item_text(s)))
                 self._par_dir(p)
         if b.get("code"):
             self._code_into(cell, b["code"])

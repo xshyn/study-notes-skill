@@ -2,7 +2,8 @@
 
 One JSON file drives both builders (`build_docx.py`, `build_pptx.py`). Write it once, render twice.
 Inline text anywhere supports light markdown: `**bold**`, `*italic*`, `` `code` ``, `==highlight==`
-(don't nest them).
+(don't nest them). Put every code fragment, regex, path or command inside backticks — it is then
+rendered verbatim in a code font and its `*`, `_` or `\` can never be read as formatting.
 
 ## Contents
 1. Top level
@@ -123,7 +124,8 @@ In the deck, `key_point`, `warning`, `tip` and `mnemonic` are gathered onto the 
  "solution": "optional prose solution",
  "answer": "Final answer, stated plainly"}
 ```
-Slides put the problem on the left and the numbered solution on the right.
+Steps are numbered automatically — don't start them with "1.", "Step 2:" (a typed number is
+stripped). Slides put the problem on the left and the numbered solution on the right.
 
 ### formula
 ```json
