@@ -4,4 +4,4 @@ focus: trace
 weight: 1
 ---
 
-The deck is a reviewable size: 20–90 slides
+The deck is a reviewable size for flipping through: 15–60 slides

@@ -222,6 +222,12 @@ def render_latex(expr: str, out_png: Path, fontsize: int = 22, color: str = "1F2
     except ImportError:
         return False
     expr = expr.strip().strip("$")
+
+    def _textgroup(m):  # \text{...}: keep spaces and hyphens as text, not math
+        body = m.group(2).replace(" ", "\\ ").replace("-", "\u2010")
+        return "\\mathrm{" + body + "}" if m.group(1) in ("text", "mathrm", "operatorname") else \
+            "\\mathbf{" + body + "}"
+    expr = re.sub(r"\\(text|textbf|mathrm|operatorname)\{([^{}]*)\}", _textgroup, expr)
     for a, b in MATHTEXT_FIXES:
         expr = re.sub(a, b, expr)
     if not (expr.startswith("$") and expr.endswith("$")):

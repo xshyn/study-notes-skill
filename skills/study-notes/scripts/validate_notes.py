@@ -53,7 +53,7 @@ def terms_from_source(src: str, top: int) -> list[str]:
     low = [w.lower() for w in words if w.lower() not in STOP]
     uni = Counter(low)
     bi = Counter(f"{a} {b}" for a, b in zip(low, low[1:]) if a != b)
-    cands = [w for w, c in bi.most_common(top * 3) if c >= 3][:top] + \
+    cands = [w for w, c in bi.most_common(top * 3) if c >= 5][:top // 2] + \
             [w for w, c in uni.most_common(top * 2) if c >= 4][:top]
     return heads, list(dict.fromkeys(cands))
 
@@ -186,8 +186,10 @@ def main():
         src = Path(a.source).read_text(encoding="utf8", errors="ignore")
         txt = all_text(n)
         heads, keyterms = terms_from_source(src, 25)
-        miss_h = [h for h in heads if len(h) > 3 and not any(w in txt for w in
-                  [w.lower() for w in re.findall(r"[\w\-]{4,}", h)][:3])]
+        def _hwords(h):
+            ws = [w for w in re.findall(r"[\w\-]+", h) if len(w) >= 4 or (len(w) >= 2 and w.isupper())]
+            return [w.lower() for w in ws if w.lower() not in STOP][:3]
+        miss_h = [h for h in heads if len(h) > 2 and _hwords(h) and not any(w in txt for w in _hwords(h))]
         miss_t = [t for t in keyterms if t not in txt]
         src_pages = sorted({int(x) for x in re.findall(r"^=== (?:Page|Slide) (\d+) ===", src, flags=re.M)})
         covered = set()
