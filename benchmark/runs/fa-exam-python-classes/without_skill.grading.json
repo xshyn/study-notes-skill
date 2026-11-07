@@ -1,0 +1,115 @@
+{
+  "expectations": [
+    {
+      "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+      "passed": true,
+      "evidence": "docx files: ['python-classes-study-notes.docx']"
+    },
+    {
+      "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+      "passed": true,
+      "evidence": "pptx files: ['python-classes-study-notes.pptx']"
+    },
+    {
+      "text": "The document is detailed: at least 6000 words",
+      "passed": false,
+      "evidence": "4073 words"
+    },
+    {
+      "text": "The document is well structured: at least 20 headings",
+      "passed": true,
+      "evidence": "32 headings"
+    },
+    {
+      "text": "The document covers ≥ 95% of the source's key concepts (27 checked)",
+      "passed": true,
+      "evidence": "27/27 present; missing: []"
+    },
+    {
+      "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+      "passed": false,
+      "evidence": "~13 distinct questions detected"
+    },
+    {
+      "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+      "passed": false,
+      "evidence": "question headings at [30], answer-only headings at []"
+    },
+    {
+      "text": "The document includes flashcards for spaced review",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "The document includes a cheat sheet / one-page summary",
+      "passed": true,
+      "evidence": "['۱۶. خلاصه یک\\u200cنگاهی (Cheat Sheet)']"
+    },
+    {
+      "text": "The document has a glossary / key-terms section",
+      "passed": true,
+      "evidence": "['۱۳. واژه\\u200cنامه (Glossary)']"
+    },
+    {
+      "text": "The document flags common mistakes / pitfalls",
+      "passed": true,
+      "evidence": "['دام مهم: شیء تغییرپذیر به\\u200cعنوان متغیر کلاس', '۱۴. دام\\u200cها و نکات امتحانی (Common Pitfalls)']"
+    },
+    {
+      "text": "The document gives exam tips",
+      "passed": true,
+      "evidence": "['۱۴. دام\\u200cها و نکات امتحانی (Common Pitfalls)']"
+    },
+    {
+      "text": "The document contains worked examples (≥ 4 mentions of example)",
+      "passed": true,
+      "evidence": "10 mentions"
+    },
+    {
+      "text": "The document uses tables (comparison / summary) — at least 2",
+      "passed": true,
+      "evidence": "56 tables"
+    },
+    {
+      "text": "The deck is a reviewable size for flipping through: 15–45 slides",
+      "passed": true,
+      "evidence": "20 slides"
+    },
+    {
+      "text": "At least 90% of slides have speaker notes",
+      "passed": false,
+      "evidence": "4/20 slides with notes"
+    },
+    {
+      "text": "No slide has text that overflows its box or shapes outside the slide",
+      "passed": true,
+      "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+    },
+    {
+      "text": "The deck includes practice/quiz questions",
+      "passed": true,
+      "evidence": "~6 questions on slides"
+    },
+    {
+      "text": "The document is written in Persian (Persian script dominates the text)",
+      "passed": true,
+      "evidence": "10649 Persian vs 7198 Latin letters"
+    },
+    {
+      "text": "The document is laid out right-to-left (bidi paragraphs)",
+      "passed": true,
+      "evidence": "674 bidi markers / 240 paragraphs"
+    },
+    {
+      "text": "The deck text is laid out right-to-left",
+      "passed": true,
+      "evidence": "89% of Persian paragraphs marked rtl"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 5,
+    "total": 21,
+    "pass_rate": 0.762
+  }
+}

@@ -12,7 +12,7 @@ doc, EPUB, YouTube video, Jupyter notebook or plain text** — and get back two 
 Right-to-left languages (Persian, Arabic, Hebrew, Urdu…) are laid out right-to-left automatically,
 with code kept left-to-right. Notes are written in the language you ask in.
 
-![Review deck generated from the Python Regex HOWTO](docs/images/deck-en.png)
+![Review deck generated from the Wikipedia TCP congestion control article](docs/images/deck-en.png)
 ![Study notes document](docs/images/doc-en.png)
 ![Persian (RTL) deck generated from the Python classes tutorial](docs/images/deck-fa.png)
 
@@ -46,7 +46,7 @@ scroll to **Skills** and click **Upload skill** (code execution and file creatio
 [`dist/study-notes.skill`](dist/study-notes.skill) is the same package for apps that install
 `.skill` files directly.
 
-### Codex, Cursor, Gemini CLI, OpenCode and other agents
+### Codex and other agents
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xshyn/study-notes-skill/main/install.sh | bash -s -- --agent codex
@@ -55,7 +55,10 @@ curl -fsSL https://raw.githubusercontent.com/xshyn/study-notes-skill/main/instal
 #   --dir PATH      install into any skills directory your agent reads
 ```
 
-If your agent has no skills directory, copy `skills/study-notes` anywhere and tell it:
+The installer copies the skill to `~/.<agent>/skills/study-notes` (`~/.config/opencode/skills`
+for OpenCode, `~/.agents/skills` for `--agent agents`); check your agent's docs for where it
+loads skills and use `--dir` if it differs. If your agent has no skills directory, copy
+`skills/study-notes` anywhere and tell it:
 *"Read `path/to/study-notes/SKILL.md` and follow it."*
 
 ### Requirements
@@ -106,6 +109,64 @@ The JSON format is documented in
 
 ---
 
+## Benchmark
+
+Three realistic requests, each run by the same model (Claude Opus 5.5) **with** the skill and
+**without** it (free to use any tools, including python-docx / python-pptx and LibreOffice):
+
+| Case | Source | Ask |
+|---|---|---|
+| **Regex** | Python *Regular Expression HOWTO*, 23-page PDF | "detailed notes… a Word doc to study from and a deck to review — make it thorough" |
+| **TCP** | Wikipedia *TCP congestion control* (URL) | "exam-prep notes for my midterm… focus on what's likely to be asked" |
+| **Persian** | Python tutorial ch. 9 *Classes*, DOCX | "complete Persian notes for tomorrow's exam, Word + PowerPoint, English terms alongside" |
+
+### Automated checks — 100 % vs 68 %
+
+19–21 objective checks per case: files open, length and structure, coverage of the source's key
+concepts, ≥ 20 practice questions with a separate answer key, flashcards, cheat sheet, common
+mistakes, exam tips, a reviewable deck size (15–45 slides), speaker notes on ≥ 90 % of slides,
+no overflowing text, and for Persian: right-to-left layout in both files.
+
+| Case | With skill | Without skill |
+|---|---|---|
+| Regex | **18 / 18** | 14 / 18 |
+| TCP | **18 / 18** | 9 / 18 |
+| Persian | **21 / 21** | 16 / 21 |
+| **Total** | **57 / 57 (100 %)** | **39 / 57 (68 %)** |
+
+| | Regex<br>with / without | TCP<br>with / without | Persian<br>with / without |
+|---|---|---|---|
+| Document words | **11,958** / 5,914 | **11,735** / 2,623 | **11,795** / 4,073 |
+| Practice questions (with answer key) | **47** / 24 | **38** / 10 | **49** / 13 |
+| Flashcards | **37** / 0 | **33** / 0 | **30** / 0 |
+| Deck slides | 42 / 31 | 36 / 17 | 39 / 20 |
+| Slides with speaker notes | **100 %** / 77 % | **97 %** / 12 % | **97 %** / 20 % |
+
+### Blind review — the skill wins 3 / 3
+
+An independent judge model compared both outputs of each case without knowing which used the
+skill, scoring correctness, completeness, usefulness for learning / review / exam prep,
+organization and visual quality of both files (rubric from Anthropic's skill-creator).
+
+| Case | With skill | Without skill | Winner |
+|---|---|---|---|
+| Regex | **9.0** | 8.7 | skill |
+| TCP | **9.0** | 8.6 | skill |
+| Persian | **9.3** | 8.7 | skill |
+
+The skill's **documents won all three** — the judge highlighted their depth, worked examples,
+answer keys and flashcards. Honest caveat: in this round the judge still preferred the
+**decks** produced without the skill (shorter, hand-designed, more diagram-led) in all three
+cases; the skill's decks are complete and consistent but denser. The cost is time: runs with the
+skill took longer (≈ 22 min vs ≈ 10 min on average) because they read the whole source and write
+far more material.
+
+Full results — per-run grading, judge reports and the grading script — are in
+[`benchmark/`](benchmark); the test cases are in
+[`skills/study-notes/evals/`](skills/study-notes/evals).
+
+---
+
 ## Repository layout
 
 ```
@@ -123,7 +184,8 @@ skills/study-notes/
 │   └── notes_common.py
 ├── requirements.txt
 └── evals/                      # benchmark cases (also runnable with `claude plugin eval`)
-dist/study-notes.skill          # upload-ready package for Claude.ai
+benchmark/                      # results of the benchmark above
+dist/study-notes.zip|.skill     # upload-ready package for Claude.ai
 install.sh                      # multi-agent installer
 .claude-plugin/                 # Claude Code plugin marketplace manifest
 ```

@@ -217,7 +217,8 @@ class Builder:
 
     def runs(self, p, text, size=None, color=None, bold=None, italic=None):
         for t, fmt in inline_runs(text):
-            r = p.add_run(t)
+            # in right-to-left text, isolate code so its punctuation stays in place (LRI … PDI)
+            r = p.add_run(f"\u2066{t}\u2069" if self.rtl and fmt.get("code") else t)
             if fmt.get("code"):
                 self._set_fonts(r, self.code_font, self.code_font)
                 r.font.size = Pt((size or 11) - 1)

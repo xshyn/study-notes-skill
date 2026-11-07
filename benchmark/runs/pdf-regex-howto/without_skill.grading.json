@@ -1,0 +1,100 @@
+{
+  "expectations": [
+    {
+      "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+      "passed": true,
+      "evidence": "docx files: ['Python_Regex_Study_Notes.docx']"
+    },
+    {
+      "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+      "passed": true,
+      "evidence": "pptx files: ['Python_Regex_Review_Deck.pptx']"
+    },
+    {
+      "text": "The document is detailed: at least 6000 words",
+      "passed": false,
+      "evidence": "5914 words"
+    },
+    {
+      "text": "The document is well structured: at least 20 headings",
+      "passed": true,
+      "evidence": "58 headings"
+    },
+    {
+      "text": "The document covers ≥ 95% of the source's key concepts (27 checked)",
+      "passed": true,
+      "evidence": "27/27 present; missing: []"
+    },
+    {
+      "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+      "passed": true,
+      "evidence": "~24 distinct questions detected"
+    },
+    {
+      "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+      "passed": true,
+      "evidence": "question headings at [53, 55], answer-only headings at [54, 56]"
+    },
+    {
+      "text": "The document includes flashcards for spaced review",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "The document includes a cheat sheet / one-page summary",
+      "passed": true,
+      "evidence": "['9. Cheat sheet']"
+    },
+    {
+      "text": "The document has a glossary / key-terms section",
+      "passed": true,
+      "evidence": "['12. Glossary']"
+    },
+    {
+      "text": "The document flags common mistakes / pitfalls",
+      "passed": true,
+      "evidence": "['pitfall', 'pitfall', 'Pitfall']"
+    },
+    {
+      "text": "The document gives exam tips",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "The document contains worked examples (≥ 4 mentions of example)",
+      "passed": true,
+      "evidence": "11 mentions"
+    },
+    {
+      "text": "The document uses tables (comparison / summary) — at least 2",
+      "passed": true,
+      "evidence": "40 tables"
+    },
+    {
+      "text": "The deck is a reviewable size for flipping through: 15–45 slides",
+      "passed": true,
+      "evidence": "31 slides"
+    },
+    {
+      "text": "At least 90% of slides have speaker notes",
+      "passed": false,
+      "evidence": "24/31 slides with notes"
+    },
+    {
+      "text": "No slide has text that overflows its box or shapes outside the slide",
+      "passed": true,
+      "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+    },
+    {
+      "text": "The deck includes practice/quiz questions",
+      "passed": true,
+      "evidence": "~11 questions on slides"
+    }
+  ],
+  "summary": {
+    "passed": 14,
+    "failed": 4,
+    "total": 18,
+    "pass_rate": 0.778
+  }
+}

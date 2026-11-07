@@ -1,0 +1,14 @@
+{
+ "pdf-regex-howto": {
+  "A": "without_skill",
+  "B": "with_skill"
+ },
+ "url-tcp-congestion": {
+  "A": "with_skill",
+  "B": "without_skill"
+ },
+ "fa-exam-python-classes": {
+  "A": "without_skill",
+  "B": "with_skill"
+ }
+}

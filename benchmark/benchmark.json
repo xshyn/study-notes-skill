@@ -1,0 +1,749 @@
+{
+  "metadata": {
+    "skill_name": "study-notes",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-11-07T07:04:16Z",
+    "evals_run": [
+      "fa-exam-python-classes",
+      "pdf-regex-howto",
+      "url-tcp-congestion"
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": "fa-exam-python-classes",
+      "eval_name": "fa-exam-python-classes",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 1103.0,
+        "tokens": 217544,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['\u06a9\u0644\u0627\u0633\\u200c\u0647\u0627 \u062f\u0631 \u067e\u0627\u06cc\u062a\u0648\u0646 - \u062c\u0632\u0648\u0647.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['\u06a9\u0644\u0627\u0633\\u200c\u0647\u0627 \u062f\u0631 \u067e\u0627\u06cc\u062a\u0648\u0646 - \u0627\u0633\u0644\u0627\u06cc\u062f \u0645\u0631\u0648\u0631.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": true,
+          "evidence": "11795 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": true,
+          "evidence": "42 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (27 checked)",
+          "passed": true,
+          "evidence": "27/27 present; missing: []"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": true,
+          "evidence": "~49 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": true,
+          "evidence": "question headings at [30], answer-only headings at [39]"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": true,
+          "evidence": "['\u0641\u0644\u0634\\u200c\u06a9\u0627\u0631\u062a\\u200c\u0647\u0627']"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": true,
+          "evidence": "['\u0628\u0631\u06af\u0647 \u062e\u0644\u0627\u0635\u0647']"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['\u0648\u0627\u0698\u0647\\u200c\u0646\u0627\u0645\u0647']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['\u0627\u0634\u062a\u0628\u0627\u0647\u0627\u062a \u0631\u0627\u06cc\u062c']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": true,
+          "evidence": "['\u0646\u06a9\u0627\u062a \u0627\u0645\u062a\u062d\u0627\u0646\u06cc']"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "56 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "142 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "39 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": true,
+          "evidence": "38/39 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~22 questions on slides"
+        },
+        {
+          "text": "The document is written in Persian (Persian script dominates the text)",
+          "passed": true,
+          "evidence": "35462 Persian vs 13741 Latin letters"
+        },
+        {
+          "text": "The document is laid out right-to-left (bidi paragraphs)",
+          "passed": true,
+          "evidence": "1457 bidi markers / 508 paragraphs"
+        },
+        {
+          "text": "The deck text is laid out right-to-left",
+          "passed": true,
+          "evidence": "100% of Persian paragraphs marked rtl"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "pdf-regex-howto",
+      "eval_name": "pdf-regex-howto",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 18,
+        "failed": 0,
+        "total": 18,
+        "time_seconds": 660.2,
+        "tokens": 185808,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['Python Regex - Study Notes.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['Python Regex - Study Deck.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": true,
+          "evidence": "11958 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": true,
+          "evidence": "44 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (27 checked)",
+          "passed": true,
+          "evidence": "27/27 present; missing: []"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": true,
+          "evidence": "~47 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": true,
+          "evidence": "question headings at [32], answer-only headings at [41]"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": true,
+          "evidence": "['Flashcards']"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": true,
+          "evidence": "['Cheat sheet']"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['Glossary']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['Common mistakes']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": true,
+          "evidence": "['Exam tips']"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "28 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "158 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "42 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": true,
+          "evidence": "42/42 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~22 questions on slides"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "url-tcp-congestion",
+      "eval_name": "url-tcp-congestion",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 18,
+        "failed": 0,
+        "total": 18,
+        "time_seconds": 2209.2,
+        "tokens": 196216,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['TCP Congestion Control - Study Notes.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['TCP Congestion Control - Study Deck.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": true,
+          "evidence": "11735 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": true,
+          "evidence": "41 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (25 checked)",
+          "passed": true,
+          "evidence": "24/25 present; missing: ['congestion collapse']"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": true,
+          "evidence": "~38 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": true,
+          "evidence": "question headings at [29], answer-only headings at [38]"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": true,
+          "evidence": "['Flashcards']"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": true,
+          "evidence": "['Cheat sheet']"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['Glossary']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['Common mistakes']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": true,
+          "evidence": "['Exam tips']"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "11 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "112 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "36 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": true,
+          "evidence": "35/36 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~21 questions on slides"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "fa-exam-python-classes",
+      "eval_name": "fa-exam-python-classes",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.762,
+        "passed": 16,
+        "failed": 5,
+        "total": 21,
+        "time_seconds": 876.6,
+        "tokens": 196157,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['python-classes-study-notes.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['python-classes-study-notes.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": false,
+          "evidence": "4073 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": true,
+          "evidence": "32 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (27 checked)",
+          "passed": true,
+          "evidence": "27/27 present; missing: []"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": false,
+          "evidence": "~13 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": false,
+          "evidence": "question headings at [30], answer-only headings at []"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": true,
+          "evidence": "['\u06f1\u06f6. \u062e\u0644\u0627\u0635\u0647 \u06cc\u06a9\\u200c\u0646\u06af\u0627\u0647\u06cc (Cheat Sheet)']"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['\u06f1\u06f3. \u0648\u0627\u0698\u0647\\u200c\u0646\u0627\u0645\u0647 (Glossary)']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['\u062f\u0627\u0645 \u0645\u0647\u0645: \u0634\u06cc\u0621 \u062a\u063a\u06cc\u06cc\u0631\u067e\u0630\u06cc\u0631 \u0628\u0647\\u200c\u0639\u0646\u0648\u0627\u0646 \u0645\u062a\u063a\u06cc\u0631 \u06a9\u0644\u0627\u0633', '\u06f1\u06f4. \u062f\u0627\u0645\\u200c\u0647\u0627 \u0648 \u0646\u06a9\u0627\u062a \u0627\u0645\u062a\u062d\u0627\u0646\u06cc (Common Pitfalls)']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": true,
+          "evidence": "['\u06f1\u06f4. \u062f\u0627\u0645\\u200c\u0647\u0627 \u0648 \u0646\u06a9\u0627\u062a \u0627\u0645\u062a\u062d\u0627\u0646\u06cc (Common Pitfalls)']"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "10 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "56 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "20 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": false,
+          "evidence": "4/20 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~6 questions on slides"
+        },
+        {
+          "text": "The document is written in Persian (Persian script dominates the text)",
+          "passed": true,
+          "evidence": "10649 Persian vs 7198 Latin letters"
+        },
+        {
+          "text": "The document is laid out right-to-left (bidi paragraphs)",
+          "passed": true,
+          "evidence": "674 bidi markers / 240 paragraphs"
+        },
+        {
+          "text": "The deck text is laid out right-to-left",
+          "passed": true,
+          "evidence": "89% of Persian paragraphs marked rtl"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "pdf-regex-howto",
+      "eval_name": "pdf-regex-howto",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.778,
+        "passed": 14,
+        "failed": 4,
+        "total": 18,
+        "time_seconds": 533.9,
+        "tokens": 198871,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['Python_Regex_Study_Notes.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['Python_Regex_Review_Deck.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": false,
+          "evidence": "5914 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": true,
+          "evidence": "58 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (27 checked)",
+          "passed": true,
+          "evidence": "27/27 present; missing: []"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": true,
+          "evidence": "~24 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": true,
+          "evidence": "question headings at [53, 55], answer-only headings at [54, 56]"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": true,
+          "evidence": "['9. Cheat sheet']"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['12. Glossary']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['pitfall', 'pitfall', 'Pitfall']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "11 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "40 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "31 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": false,
+          "evidence": "24/31 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~11 questions on slides"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "url-tcp-congestion",
+      "eval_name": "url-tcp-congestion",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 9,
+        "failed": 9,
+        "total": 18,
+        "time_seconds": 342.9,
+        "tokens": 114221,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A .docx study document was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "docx files: ['TCP_Congestion_Control_Exam_Notes.docx']"
+        },
+        {
+          "text": "A .pptx deck was produced and opens cleanly (LibreOffice converts it)",
+          "passed": true,
+          "evidence": "pptx files: ['TCP_Congestion_Control_Exam_Slides.pptx']"
+        },
+        {
+          "text": "The document is detailed: at least 6000 words",
+          "passed": false,
+          "evidence": "2623 words"
+        },
+        {
+          "text": "The document is well structured: at least 20 headings",
+          "passed": false,
+          "evidence": "19 headings"
+        },
+        {
+          "text": "The document covers \u2265 95% of the source's key concepts (25 checked)",
+          "passed": false,
+          "evidence": "23/25 present; missing: ['congestion collapse', 'packet loss']"
+        },
+        {
+          "text": "The document has at least 20 practice questions (enough to self-test for an exam)",
+          "passed": false,
+          "evidence": "~10 distinct questions detected"
+        },
+        {
+          "text": "Answers are in a separate answer-key section after the questions (so the learner can self-test)",
+          "passed": false,
+          "evidence": "question headings at [17], answer-only headings at []"
+        },
+        {
+          "text": "The document includes flashcards for spaced review",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document includes a cheat sheet / one-page summary",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document has a glossary / key-terms section",
+          "passed": true,
+          "evidence": "['3. Key terms']"
+        },
+        {
+          "text": "The document flags common mistakes / pitfalls",
+          "passed": true,
+          "evidence": "['10. Common mistakes']"
+        },
+        {
+          "text": "The document gives exam tips",
+          "passed": false,
+          "evidence": "[]"
+        },
+        {
+          "text": "The document contains worked examples (\u2265 4 mentions of example)",
+          "passed": true,
+          "evidence": "6 mentions"
+        },
+        {
+          "text": "The document uses tables (comparison / summary) \u2014 at least 2",
+          "passed": true,
+          "evidence": "6 tables"
+        },
+        {
+          "text": "The deck is a reviewable size for flipping through: 15\u201345 slides",
+          "passed": true,
+          "evidence": "17 slides"
+        },
+        {
+          "text": "At least 90% of slides have speaker notes",
+          "passed": false,
+          "evidence": "2/17 slides with notes"
+        },
+        {
+          "text": "No slide has text that overflows its box or shapes outside the slide",
+          "passed": true,
+          "evidence": "overflow on slides []; out-of-bounds shapes: 0"
+        },
+        {
+          "text": "The deck includes practice/quiz questions",
+          "passed": true,
+          "evidence": "~10 questions on slides"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 1324.1333,
+        "stddev": 797.8253,
+        "min": 660.2,
+        "max": 2209.2
+      },
+      "tokens": {
+        "mean": 199856.0,
+        "stddev": 16178.0909,
+        "min": 185808,
+        "max": 217544
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.68,
+        "stddev": 0.1561,
+        "min": 0.5,
+        "max": 0.778
+      },
+      "time_seconds": {
+        "mean": 584.4667,
+        "stddev": 270.4194,
+        "min": 342.9,
+        "max": 876.6
+      },
+      "tokens": {
+        "mean": 169749.6667,
+        "stddev": 48108.3783,
+        "min": 114221,
+        "max": 198871
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.32",
+      "time_seconds": "+739.7",
+      "tokens": "+30106"
+    }
+  },
+  "notes": []
+}

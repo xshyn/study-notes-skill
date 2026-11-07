@@ -1,0 +1,72 @@
+{
+  "winner": "A",
+  "doc_winner": "A",
+  "deck_winner": "B",
+  "reasoning": "Both are technically correct on the core exam material: slow start +1 MSS/ACK, congestion avoidance MSS*MSS/cwnd, ssthresh = max(FlightSize/2, 2 MSS), Tahoe vs Reno on 3 dup ACKs vs timeout, NewReno partial ACKs, and AIMD fairness. Doc: A (48 pp) is far more complete. It has an exam-priority table, the AIMD update rule with a sawtooth chart, worked byte-level window problems, a duplicate-ACK step-by-step, a Tahoe vs Reno trace, a slow-start weaknesses table, a black/grey/green box classification, 36 practice questions with answers and flashcards. It also flags where the article is loose (the 'exponential reduction' wording). B's doc is a tight 7-page exam sheet (priority list, event table, Tahoe/Reno chart, 10+ Q&A). It is high quality but thin, and it skips much of the article. Deck: B's 17 slides are cleaner and more exam-focused: a 'most likely to be asked' ranking, an event table, a well-annotated cwnd trace chart and a facts/dates table. A's 36 slides are good but repetitive, with summary slides and small-font mistakes and cheat-sheet slides. Overall A wins: its doc covers everything B covers plus much more practice, and its deck is still solid.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 4,
+        "formatting": 4,
+        "usability": 4
+      },
+      "content_score": 5.0,
+      "structure_score": 4.0,
+      "overall_score": 9.0
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 3,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 4,
+        "usability": 4
+      },
+      "content_score": 4.3,
+      "structure_score": 4.3,
+      "overall_score": 8.6
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 9.0,
+      "strengths": [
+        "Very complete, exam-prioritised doc with many worked problems and Q&A",
+        "Charts and step-by-step traces"
+      ],
+      "weaknesses": [
+        "Long, somewhat repetitive deck"
+      ]
+    },
+    "B": {
+      "score": 8.6,
+      "strengths": [
+        "Concise and well targeted; excellent priority slide and trace chart",
+        "Clean, legible deck"
+      ],
+      "weaknesses": [
+        "Thin doc for the request; limited practice"
+      ]
+    }
+  },
+  "notable_issues": {
+    "A": [
+      "Deck is long (36 slides) with many text-dense 'Summary' and key-term slides; the common-mistakes slide uses very small text",
+      "Doc length (48 pp) may be a lot for a Monday midterm, though the priority table helps triage",
+      "Some 'beyond the article' material (Chiu-Jain argument, general a/b AIMD form) is mixed in, though it is labelled"
+    ],
+    "B": [
+      "Doc is only 7 pages; many article topics (individual CCA details, slow-start weaknesses, router-assisted schemes) get one line each",
+      "Fewer practice problems (around 10) and no numeric byte-level window example",
+      "Deck practice questions have no answers on the slides ('answers in the speaker notes and the doc')"
+    ]
+  }
+}

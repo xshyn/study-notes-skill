@@ -116,7 +116,8 @@ class Deck:
         parts = [(str(text), {})] if font == self.code_font else inline_runs(text)  # code: verbatim
         for t, fmt in parts:
             r = p.add_run()
-            r.text = t
+            # in right-to-left text, isolate code so its punctuation stays in place (LRI … PDI)
+            r.text = f"\u2066{t}\u2069" if self.rtl and fmt.get("code") and font != self.code_font else t
             f = r.font
             f.size = Pt(size)
             f.name = self.code_font if fmt.get("code") else (font or self.font)
