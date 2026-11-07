@@ -419,7 +419,10 @@ class Deck:
         if b.get("solution"):
             right.append((b["solution"], 0, {}))
         if b.get("answer"):
-            right.append((f"∴ **{b['answer']}**", 0, {"color": self.T["primary"]}))
+            for li, line in enumerate(str(b["answer"]).split("\n")):
+                styled = any(m in line for m in ("`", "**", "=="))
+                right.append(((("∴ " if li == 0 else "   ") + (line if styled or not line.strip() else f"**{line}**")),
+                              0, {"color": self.T["primary"], "space_after": 2}))
         if not left:
             left, right = right, []
         two_col = bool(right) and bool(left)
