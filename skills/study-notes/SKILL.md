@@ -51,7 +51,7 @@ and YouTube transcripts. Output has `=== Page N ===` / `=== Slide N ===` markers
 - **URL can't be fetched from the shell** (sandbox, paywall, JS-heavy page): fetch it with your own
   web tool (web fetch / browser), save the *complete* text to `work/source.md`, then continue. Make
   sure you have the whole page, not a summary — if your fetch tool summarises, request the full
-  text in chunks.
+  text in chunks — e.g. ask for a sentence-by-sentence account of one section at a time.
 - **Scanned PDF** (the script warns about very little text): OCR it (`ocrmypdf`), or read the
   page images directly if you can view images.
 - **Read all of it.** Read `source.txt` completely before writing — in chunks for long sources

@@ -805,8 +805,10 @@ class Deck:
         if depth > 1:
             pending_text.append((f"{num}  {title}", 0, {"bold": True, "color": self.T["primary"],
                                                          "space_after": 4}))
-            if sec.get("summary") and not sec.get("slide_bullets"):
+            if sec.get("summary") and not sec.get("slide_bullets") and not self.curated:
                 pending_text.append((sec["summary"], 0, {"italic": True, "color": self.T["muted"]}))
+            elif sec.get("summary"):
+                pending_notes.append(plain(sec["summary"]))
         for x in sec.get("slide_bullets") or []:
             pending_text.append((item_text(x), 0, {"bullet": "•"}))
             for ch in item_children(x):

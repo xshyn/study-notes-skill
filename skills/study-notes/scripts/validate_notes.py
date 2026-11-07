@@ -177,7 +177,10 @@ def main():
         warns.append("deck is not curated: no section has 'slide_bullets' and no block has \"slide\": true "
                      "— the deck will show every block and be long")
     else:
-        nob = [num for num, d, sec in secs if d == 1 and not sec.get("slide_bullets")]
+        def _marked(sec):
+            return any(b.get("slide") is True for b in sec.get("blocks", [])) or \
+                any(_marked(x) or x.get("slide_bullets") for x in sec.get("subsections", []))
+        nob = [num for num, d, sec in secs if d == 1 and not sec.get("slide_bullets") and not _marked(sec)]
         if nob:
             warns.append(f"top-level sections without slide_bullets: {', '.join(nob)}")
         if marked > 12 * max(1, len(top_secs)):
