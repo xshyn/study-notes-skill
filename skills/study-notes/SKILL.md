@@ -95,6 +95,9 @@ and YouTube transcripts. Output has `=== Page N ===` / `=== Slide N ===` markers
     mistake/tip. Prefer one strong visual per section (a `diagram`, a `chart` of how a quantity
     evolves, a table) over several text slides;
   - everything unmarked stays in the document and in the speaker notes, so nothing is lost.
+  - each top-level section also costs ~2–3 fixed slides (divider, review/quiz, key-term cards
+    when it has 3+ marked terms), so for sources with many short chapters, group related
+    chapters into fewer top-level sections (keep the originals as subsections).
 - For long sources write one file per chapter under `work/sections/` and list their paths in
   `sections` — smaller writes, easier fixes.
 

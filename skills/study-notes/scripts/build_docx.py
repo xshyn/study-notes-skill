@@ -659,7 +659,7 @@ class Builder:
             rows.append((self.L["source"], m["source"]))
         for k, lab in (("author", "Author"), ("course", "Course"), ("level", "Level"), ("date", "Date")):
             if m.get(k):
-                rows.append((lab, str(m[k])))
+                rows.append((self.L.get(k, lab), str(m[k])))
         for k, v in rows:
             p = self.para("", size=10.5)
             self.runs(p, f"{k}:  ", bold=True, color=self.T["ink"], size=10.5)
